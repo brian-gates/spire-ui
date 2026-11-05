@@ -38,8 +38,12 @@ export function parseAtlasTres(text: string): { atlas: string; region: Rect } | 
  * Turns a localization string into plain display text: BBCode-style tags dropped, plural
  * selectors resolved to their plural form, and runtime values (unknown here) shown as "X".
  */
+/** Longest localization string processed; longer (untrusted) input is cut to bound the regexes. */
+const MAX_TEXT = 8 * 1024;
+
 export function plainText(s: string): string {
   return s
+    .slice(0, MAX_TEXT)
     .replace(/\[img[^\]]*\][\s\S]*?\[\/img\]/g, "")
     .replace(/\[\/?[a-z_]+(?:=[^\]]*)?\]/gi, "")
     .replace(/\{[^{}:]*:plural:([^{}|]*)\|([^{}]*)\}/g, "$2")

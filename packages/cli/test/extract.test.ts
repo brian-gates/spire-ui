@@ -121,7 +121,7 @@ describe("extract", () => {
       fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? all(path.join(dir, e.name)) : [path.join(dir, e.name)]));
     const written = all(tmp).filter((f) => /evil/i.test(f));
     expect(written).toEqual([]);
-    for (const f of all(out)) expect(path.relative(out, f)).toMatch(/^(manifest\.json|(relic|potion|class|room|ui|card)\/[a-z0-9_-]+@\d+\.webp|fonts\/[a-z0-9_-]+\.ttf)$/);
+    for (const f of all(out)) expect(path.relative(out, f)).toMatch(/^(manifest\.json|\.spire-ui-art|(relic|potion|class|room|ui|card)\/[a-z0-9_-]+@\d+\.webp|fonts\/[a-z0-9_-]+\.ttf)$/);
   });
 
   test("--fonts copies the game's fonts and records them in the manifest", async () => {
@@ -149,12 +149,15 @@ describe("extract", () => {
     const out = outDir("rerun");
     const pck = path.join(game, PCK_NAME);
     await extract({ pck, out, sizes: [32, 64], kinds: [...DEFAULT_KINDS], fonts: true });
-    fs.writeFileSync(path.join(out, "stale.txt"), "from an older game version");
+    const written = JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8"));
+    expect(written.generator).toBe("spire-ui");
+    expect(fs.existsSync(path.join(out, ".spire-ui-art"))).toBe(true);
+    fs.writeFileSync(path.join(out, "relic/stale@64.webp"), "from an older game version");
     const before = JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8")).generatedAt as string;
     await new Promise((r) => setTimeout(r, 5));
 
     await extract({ pck, out, sizes: [48], kinds: ["potion"], fonts: false });
-    expect(fs.existsSync(path.join(out, "stale.txt"))).toBe(false);
+    expect(fs.existsSync(path.join(out, "relic/stale@64.webp"))).toBe(false);
     expect(fs.existsSync(path.join(out, "fonts"))).toBe(false);
     expect(fs.existsSync(path.join(out, "relic"))).toBe(false);
     const manifest = parseManifest(JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8")))!;
@@ -180,6 +183,72 @@ describe("extract", () => {
     expect((err as ExtractError).code).toBe("out-not-replaceable");
     expect(fs.readdirSync(out)).toEqual(["index.html"]);
     expect(siblings(out)).toEqual([]);
+  });
+
+  /** Every file under `dir` with its bytes, to prove a refused folder is untouched. */
+  const snapshot = (dir: string): Record<string, string> =>
+    Object.fromEntries(
+      (fs.readdirSync(dir, { recursive: true, withFileTypes: true }) as fs.Dirent[])
+        .filter((e) => e.isFile())
+        .map((e) => {
+          const f = path.join(e.parentPath, e.name);
+          return [path.relative(dir, f), fs.readFileSync(f).toString("base64")];
+        }),
+    );
+
+  test("refuses a web app folder that has its own manifest.json and leaves it untouched", async () => {
+    const game = await fakeGame();
+    const out = outDir("webapp");
+    fs.mkdirSync(path.join(out, "relic"), { recursive: true });
+    fs.writeFileSync(path.join(out, "manifest.json"), JSON.stringify({ name: "My App", icons: [{ src: "logo192.png", sizes: "192x192" }] }));
+    fs.writeFileSync(path.join(out, "index.html"), "<p>mine</p>");
+    fs.writeFileSync(path.join(out, "relic", "mine.txt"), "user data");
+    const before = snapshot(out);
+    const err = await extract({ pck: path.join(game, PCK_NAME), out, sizes: [32], kinds: ["relic"], fonts: false }).catch((e: unknown) => e);
+    expect((err as ExtractError).code).toBe("out-not-replaceable");
+    expect(snapshot(out)).toEqual(before);
+    expect(siblings(out)).toEqual([]);
+
+    // Even a schema-1 manifest without spire-ui's marker is not proof enough.
+    fs.writeFileSync(path.join(out, "manifest.json"), JSON.stringify({ schemaVersion: 1, items: {} }));
+    fs.rmSync(path.join(out, "index.html"));
+    const again = await extract({ pck: path.join(game, PCK_NAME), out, sizes: [32], kinds: ["relic"], fonts: false }).catch((e: unknown) => e);
+    expect((again as ExtractError).code).toBe("out-not-replaceable");
+    expect(fs.readFileSync(path.join(out, "relic", "mine.txt"), "utf8")).toBe("user data");
+  });
+
+  test("refuses a previous output that now also holds a user's file", async () => {
+    const game = await fakeGame();
+    const out = outDir("stray");
+    const pck = path.join(game, PCK_NAME);
+    await extract({ pck, out, sizes: [32], kinds: ["relic"], fonts: false });
+    fs.writeFileSync(path.join(out, "notes.md"), "keep me");
+    const before = snapshot(out);
+    const err = await extract({ pck, out, sizes: [32], kinds: ["relic"], fonts: false }).catch((e: unknown) => e);
+    expect((err as ExtractError).code).toBe("out-not-replaceable");
+    expect((err as Error).message).toContain("notes.md");
+    expect(snapshot(out)).toEqual(before);
+    expect(siblings(out)).toEqual([]);
+  });
+
+  test.skipIf(process.getuid?.() === 0)("a previous output that cannot be deleted is left with a warning, not a failure", async () => {
+    const game = await fakeGame();
+    const out = outDir("stuck");
+    const pck = path.join(game, PCK_NAME);
+    await extract({ pck, out, sizes: [32], kinds: ["relic"], fonts: false });
+    fs.chmodSync(path.join(out, "relic"), 0o555); // its files cannot be unlinked
+    const warnings: string[] = [];
+    try {
+      await extract({ pck, out, sizes: [16], kinds: ["relic"], fonts: false, warn: (m) => warnings.push(m) });
+      expect(fs.existsSync(path.join(out, "relic/anchor@16.webp"))).toBe(true);
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toMatch(/could not remove the previous output at .*\.old-/);
+    } finally {
+      for (const s of siblings(out)) {
+        fs.chmodSync(path.join(path.dirname(out), s, "relic"), 0o755);
+        fs.rmSync(path.join(path.dirname(out), s), { recursive: true, force: true });
+      }
+    }
   });
 
   test("refuses packs from another engine major version", async () => {
@@ -245,6 +314,8 @@ describe("godot helpers", () => {
     expect(plainText("Whenever you wave, gain [blue]{Amount}[/blue] [gold]Cheer[/gold].")).toBe("Whenever you wave, gain X Cheer.");
     expect(plainText("Hold [blue]{Hats}[/blue] {Hats:plural:hat|hats}.")).toBe("Hold X hats.");
     expect(plainText("Deal [img]res://x.png[/img]damage\n  now")).toBe("Deal damage now");
+    // Untrusted strings are cut before the regexes run.
+    expect(plainText(`[img]${"x".repeat(100_000)}`).length).toBeLessThanOrEqual(8 * 1024);
   });
 
   test("unwrapRscc inflates zstd and deflate blocks and checks sizes", () => {

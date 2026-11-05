@@ -77,6 +77,32 @@ describe("spire-ui extract-art", () => {
     expect(fs.existsSync(out)).toBe(false);
   });
 
+  test("--out pointing at a web app's public folder is refused with one line and left untouched", async () => {
+    const game = await fakeGame("game-webapp");
+    const pub = path.join(tmp, "webapp-public");
+    fs.mkdirSync(pub);
+    const manifest = JSON.stringify({ short_name: "App", icons: [{ src: "favicon.ico" }] });
+    fs.writeFileSync(path.join(pub, "manifest.json"), manifest);
+    fs.writeFileSync(path.join(pub, "index.html"), "<p>mine</p>");
+    const r = run("extract-art", "--game-dir", game, "--out", pub);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toMatch(/^spire-ui: refusing to replace /);
+    expect(r.stderr.trim().split("\n")).toHaveLength(1);
+    expect(fs.readdirSync(pub).sort()).toEqual(["index.html", "manifest.json"]);
+    expect(fs.readFileSync(path.join(pub, "manifest.json"), "utf8")).toBe(manifest);
+    expect(fs.readdirSync(tmp).filter((f) => f.startsWith("webapp-public."))).toEqual([]);
+  });
+
+  test("filesystem problems with --out are user errors without a stack trace", async () => {
+    const game = await fakeGame("game-fs");
+    const file = path.join(tmp, "a-file");
+    fs.writeFileSync(file, "");
+    const r = run("extract-art", "--game-dir", game, "--out", path.join(file, "spire"));
+    expect(r.code).toBe(2);
+    expect(r.stderr).toMatch(/^spire-ui: ENOTDIR/);
+    expect(r.stderr.trim().split("\n")).toHaveLength(1);
+  });
+
   test("bad options are user errors", () => {
     expect(run("extract-art", "--kinds", "relic,hats").code).toBe(2);
     expect(run("extract-art", "--sizes", "0").code).toBe(2);

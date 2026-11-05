@@ -25,7 +25,8 @@ npx spire-ui extract-art --game-dir "D:/Games/Slay the Spire 2" --out public/spi
 
 Exit codes: `0` done, `2` a problem with the input (game not found, not a Godot 4 pack, encrypted
 or unsupported pack, unreadable texture, an `--out` folder that is not a previous extraction, bad
-options), `1` anything unexpected. Errors are one line on stderr.
+options, or the filesystem refusing to write `--out`: permissions, full or read-only disk, a file
+in the way), `1` anything unexpected. Errors are one line on stderr.
 
 ### Output
 
@@ -33,13 +34,17 @@ options), `1` anything unexpected. Errors are one line on stderr.
 <out>/manifest.json
 <out>/<kind>/<slug>@<size>.webp     e.g. relic/ring_of_the_snake@64.webp
 <out>/fonts/<name>.ttf              only with --fonts
+<out>/.spire-ui-art                 marker: this folder is spire-ui output
 ```
 
 `manifest.json` follows the `SpireManifest` schema (version 1) that Spire UI's `<SpireAssets>`
 reads. Each item's `file` (relative to the manifest) is the **largest** requested size, and `w`/`h`
-are that file's pixel size. The manifest also has a top-level `sizes` array (an addition the
-resolver ignores): every icon exists at each listed size at the same path with `@<size>` changed,
-so `relic/anchor@64.webp` has a `relic/anchor@32.webp` sibling when you pass `--sizes 32,64`.
+are that file's pixel size. Two top-level fields are additions the resolver ignores:
+
+- `generator: "spire-ui"`: marks the manifest as written by this CLI (see below).
+- `sizes`: every icon exists at each listed size at the same path with `@<size>` changed, so
+  `relic/anchor@64.webp` has a `relic/anchor@32.webp` sibling when you pass `--sizes 32,64`.
+
 `gameVersion` comes from the `release_info.json` Steam installs beside the pack (or one inside the
 pack, if a future build moves it there), else `unknown`.
 
@@ -61,9 +66,15 @@ What is extracted:
 
 The output is written to `<out>.tmp-*` beside `<out>` and renamed into place only when everything
 succeeded, so a failed or interrupted run never leaves a partial `<out>`, and a failed re-run keeps
-the previous output. An existing `<out>` is only replaced if it is empty or has a `manifest.json`
-from an earlier run. Names inside the pack are never used as output paths: files are named from a
-fixed kind, a `[a-z0-9_-]` slug and the size.
+the previous output. An existing `<out>` is replaced only if it is empty or provably a previous
+extraction: it has the `.spire-ui-art` marker, a `manifest.json` with `generator: "spire-ui"`,
+`schemaVersion: 1` and an `items` object, and nothing at its top level besides the kind folders,
+`fonts/`, `manifest.json` and the marker. Anything else (a web app's `public/` with its own
+`manifest.json`, or a previous output where you added a file) is refused with exit code 2 and
+left untouched, so point `--out` at a folder of its own such as `public/spire`. If the previous
+output cannot be deleted after the new one is in place, the run still succeeds and warns with the
+leftover `<out>.old-*` path. Names inside the pack are never used as output paths: files are named
+from a fixed kind, a `[a-z0-9_-]` slug and the size.
 
 ## Internals
 

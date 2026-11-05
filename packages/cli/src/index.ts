@@ -105,6 +105,7 @@ async function main(argv: string[]): Promise<number> {
   return 0;
 }
 
+const FS_INPUT_ERRORS = new Set(["EACCES", "EPERM", "ENOSPC", "EROFS", "EEXIST", "ENOTDIR", "EISDIR"]);
 const oneLine = (s: string) => s.replace(/\s*\n\s*/g, " ");
 
 process.once("SIGINT", () => {
@@ -122,6 +123,10 @@ main(process.argv.slice(2)).then(
       process.exitCode = 2;
     } else if (e instanceof ExtractError || e instanceof PckError || e instanceof CtexError || e instanceof ResourceError) {
       console.error(`spire-ui: ${oneLine(e.message)}`);
+      process.exitCode = 2;
+    } else if (FS_INPUT_ERRORS.has((e as NodeJS.ErrnoException)?.code ?? "")) {
+      // Problems with the output location (permissions, full or read-only disk, a file in the way).
+      console.error(`spire-ui: ${oneLine((e as Error).message)}`);
       process.exitCode = 2;
     } else {
       console.error(`spire-ui: unexpected error: ${oneLine(e instanceof Error ? (e.stack ?? e.message) : String(e))}`);

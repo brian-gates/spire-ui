@@ -299,7 +299,28 @@ async function gameVersion(pck: string, index: PckIndex): Promise<string> {
   }
 }
 
-/** Throws unless `out` is absent, empty, or holds a previous extraction (has manifest.json). */
+/** Marker file that, with a spire-ui manifest, proves a folder is a previous extraction. */
+export const MARKER = ".spire-ui-art";
+const MARKER_TEXT = "Written by spire-ui extract-art. This folder is replaced on every run.\n";
+export const GENERATOR = "spire-ui";
+/** Everything an extraction writes at its top level. */
+const OWNED = new Set<string>([...ASSET_KINDS, "fonts", "manifest.json", MARKER]);
+
+/** Whether `out` holds manifest.json written by spire-ui (generator field, schema 1, items object). */
+function hasOwnManifest(out: string): boolean {
+  try {
+    const m = JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8")) as Record<string, unknown>;
+    return m.generator === GENERATOR && m.schemaVersion === 1 && typeof m.items === "object" && m.items !== null && !Array.isArray(m.items);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Throws unless `out` is absent, empty, or provably a previous extraction: it has the marker file
+ * and a spire-ui manifest.json, and nothing at its top level that an extraction does not write.
+ * Any other folder (a web app's public/ with its own manifest.json, say) is never replaced.
+ */
 function checkReplaceable(out: string): void {
   let entries: string[];
   try {
@@ -309,9 +330,11 @@ function checkReplaceable(out: string): void {
     if ((e as NodeJS.ErrnoException).code === "ENOENT") return;
     throw e;
   }
-  if (entries.length > 0 && !entries.includes("manifest.json")) {
-    throw new ExtractError("out-not-replaceable", `refusing to replace ${out}: it is not empty and has no manifest.json from a previous extraction`);
-  }
+  if (entries.length === 0) return;
+  const refuse = (why: string) => new ExtractError("out-not-replaceable", `refusing to replace ${out}: ${why}; pick an empty or new --out folder`);
+  if (!entries.includes(MARKER) || !hasOwnManifest(out)) throw refuse("it is not a previous spire-ui extract-art output");
+  const foreign = entries.filter((e) => !OWNED.has(e));
+  if (foreign.length) throw refuse(`it contains files spire-ui did not write (${foreign.slice(0, 3).join(", ")}${foreign.length > 3 ? ", ..." : ""})`);
 }
 
 export interface ExtractOptions {
@@ -420,8 +443,9 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
     const sortedItems = Object.fromEntries(Object.entries(items).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
     // `sizes` is an extension to the schema: every item also exists at each listed size, at the
     // same path with `@<size>` in place of the largest size.
-    const manifest: SpireManifest & { sizes: number[] } = {
+    const manifest: SpireManifest & { generator: string; sizes: number[] } = {
       schemaVersion: 1,
+      generator: GENERATOR,
       gameVersion: version,
       generatedAt: new Date().toISOString(),
       sizes,
@@ -429,8 +453,9 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
       ...(fontFiles.length ? { fonts } : {}),
     };
     write(confined(staging, "manifest.json"), Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`));
+    write(confined(staging, MARKER), Buffer.from(MARKER_TEXT));
 
-    swapIntoPlace(staging, out);
+    swapIntoPlace(staging, out, o.warn);
     activeStaging.delete(staging);
     const unmapped = [...mapped].filter(([, m]) => !m.texture).map(([id]) => id);
     return { gameVersion: version, engine: index.engine.join("."), counts, unmapped, fonts: fontFiles, files, bytes };
@@ -442,7 +467,7 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
 }
 
 /** Replaces `out` with `staging`; the previous output is kept until the new one is in place. */
-function swapIntoPlace(staging: string, out: string): void {
+function swapIntoPlace(staging: string, out: string, warn?: (message: string) => void): void {
   checkReplaceable(out);
   if (!fs.existsSync(out)) {
     fs.renameSync(staging, out);
@@ -456,5 +481,10 @@ function swapIntoPlace(staging: string, out: string): void {
     fs.renameSync(old, out);
     throw e;
   }
-  fs.rmSync(old, { recursive: true, force: true });
+  // The new output is in place; failing to delete the old one should not fail the run.
+  try {
+    fs.rmSync(old, { recursive: true, force: true });
+  } catch (e) {
+    warn?.(`could not remove the previous output at ${old} (${(e as Error).message}); delete it yourself`);
+  }
 }
