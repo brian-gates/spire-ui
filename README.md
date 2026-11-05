@@ -1,6 +1,6 @@
 # Spire UI
 
-A dark-first, warm-palette React + Tailwind v4 component kit, distributed as a shadcn registry.
+A dark, slate-teal React + Tailwind v4 component kit, distributed as a shadcn registry.
 
 Unofficial fan project, not affiliated with Mega Crit.
 
@@ -17,10 +17,10 @@ npx shadcn add https://brian-gates.github.io/spire-ui/r/spire-utils.json
 
 | Role | Font | Licence |
 | --- | --- | --- |
-| Display (`--font-spire-display`) | Cinzel | SIL Open Font License 1.1 |
-| Body (`--font-spire-body`) | Source Serif 4 | SIL Open Font License 1.1 |
+| Display (`--font-spire-display`) | Kreon | SIL Open Font License 1.1 |
+| Body (`--font-spire-body`) | Spectral | SIL Open Font License 1.1 |
 
-The kit ships no game art, text or fonts. Load the fonts yourself (Google Fonts or `@fontsource`).
+The kit ships no game art, text or fonts. Both fonts are available from Google Fonts (https://fonts.google.com/specimen/Kreon, https://fonts.google.com/specimen/Spectral). Load them yourself, e.g. via Google Fonts or `@fontsource`.
 
 ## Development
 

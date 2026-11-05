@@ -7,33 +7,37 @@
       "name": "spire-theme",
       "type": "registry:theme",
       "title": "Spire theme",
-      "description": "Dark-first warm palette, class and rarity colours, fonts, and panel/frame utilities.",
+      "description": "Dark slate-teal palette, class and rarity colours, fonts, and panel/frame utilities.",
       "files": [
-        { "path": "registry/spire/theme/spire.css", "type": "registry:theme", "target": "~/styles/spire.css" }
+        {
+          "path": "registry/spire/theme/spire.css",
+          "type": "registry:theme",
+          "target": "~/styles/spire.css"
+        }
       ],
       "cssVars": {
         "theme": {
-          "color-spire-bg": "#14100c",
-          "color-spire-panel": "#1f1912",
-          "color-spire-panel-edge": "#3a2f22",
-          "color-spire-ink": "#efe4cf",
-          "color-spire-muted": "#b3a48b",
-          "color-spire-gold": "#e2b65a",
-          "color-spire-hp": "#e0624b",
-          "color-spire-energy": "#4f9bd6",
-          "color-class-ironclad": "#e0624b",
-          "color-class-silent": "#5fae5a",
-          "color-class-defect": "#4f9bd6",
-          "color-class-regent": "#e0a23a",
-          "color-class-necrobinder": "#b07ad6",
-          "color-rarity-common": "#b3a48b",
-          "color-rarity-uncommon": "#5fa8d3",
-          "color-rarity-rare": "#e2b65a",
-          "color-rarity-boss": "#e0624b",
-          "color-rarity-event": "#5fae5a",
-          "color-rarity-starter": "#998c76",
-          "font-spire-display": "\"Cinzel\", \"Iowan Old Style\", Georgia, serif",
-          "font-spire-body": "\"Source Serif 4\", \"Iowan Old Style\", Georgia, serif"
+          "color-spire-bg": "#0a1115",
+          "color-spire-panel": "#18262d",
+          "color-spire-panel-edge": "#3b5560",
+          "color-spire-ink": "#f3e9d2",
+          "color-spire-muted": "#a9b8b8",
+          "color-spire-gold": "#f0c75e",
+          "color-spire-hp": "#ff8a7d",
+          "color-spire-energy": "#5fb0e8",
+          "color-class-ironclad": "#ec6a5e",
+          "color-class-silent": "#6fbf68",
+          "color-class-defect": "#5fb0e8",
+          "color-class-regent": "#e8a944",
+          "color-class-necrobinder": "#c49ae6",
+          "color-rarity-common": "#a9b8b8",
+          "color-rarity-uncommon": "#6fb8e0",
+          "color-rarity-rare": "#f0c75e",
+          "color-rarity-boss": "#ec6a5e",
+          "color-rarity-event": "#6fbf68",
+          "color-rarity-starter": "#8fa3a3",
+          "font-spire-display": "\"Kreon\", Georgia, \"Iowan Old Style\", serif",
+          "font-spire-body": "\"Spectral\", Georgia, \"Iowan Old Style\", serif"
         }
       }
     },
@@ -42,9 +46,16 @@
       "type": "registry:lib",
       "title": "Spire utils",
       "description": "cn() class merging helper.",
-      "dependencies": ["clsx", "tailwind-merge"],
+      "dependencies": [
+        "clsx",
+        "tailwind-merge"
+      ],
       "files": [
-        { "path": "registry/spire/lib/cn.ts", "type": "registry:lib", "target": "~/lib/cn.ts" }
+        {
+          "path": "registry/spire/lib/cn.ts",
+          "type": "registry:lib",
+          "target": "~/lib/cn.ts"
+        }
       ]
     }
   ]
