@@ -6,3 +6,4 @@ spire-art/
 storybook-static/
 test-results/
 playwright-report/
+dist-ssr

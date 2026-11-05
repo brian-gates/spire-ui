@@ -110,10 +110,10 @@ test.describe("registry and storybook", () => {
     expect(frame.ok()).toBe(true);
   });
 
-  test("a deep link to a component page survives a reload (404.html fallback is present)", async ({ request }) => {
-    const res = await request.get("/spire-ui/404.html");
-    expect(res.ok()).toBe(true);
-    expect(await res.text()).toContain("<div id=\"root\">");
+  test("a deep link to a component page survives a reload (served as its own prerendered file)", async ({ page }) => {
+    await page.goto("/spire-ui/components/run-row");
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("RunRow");
   });
 });
 

@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: 22
       - run: bun install --frozen-lockfile
-      # Registry JSON to /r, Storybook to /storybook, docs (with 404.html SPA fallback) at the root.
+      # Registry JSON to /r, Storybook to /storybook, docs prerendered to a real index.html per route (plus sitemap.xml, robots.txt, 404.html) at the root.
       - run: bun run docs:build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
