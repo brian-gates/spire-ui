@@ -12,13 +12,12 @@ const BCDEC_COPYRIGHT = "Copyright (c) 2022 Sergii Kudlai";
 
 describe("published package", () => {
   test("bundles keep bcdec's licence notice wherever the ported decoder ends up", () => {
-    // The package's own tsup config, with the decoder's consumer added as an entry: the bin stub
-    // does not import it yet, and a bundle that does must carry the notice.
-    execFileSync(path.join(pkg, "node_modules/.bin/tsup"), ["src/index.ts", "src/ctex.ts", "--out-dir", out], { cwd: pkg, stdio: "pipe" });
+    // The package's own tsup config; the bin bundles the decoder through extract-art.
+    execFileSync(path.join(pkg, "node_modules/.bin/tsup"), ["--out-dir", out], { cwd: pkg, stdio: "pipe" });
     const ported = "[0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64]"; // BC7 4-bit weights
-    const ctex = fs.readFileSync(path.join(out, "ctex.js"), "utf8");
-    expect(ctex).toContain(ported);
-    for (const file of fs.readdirSync(out).filter((f) => f.endsWith(".js"))) {
+    const bundles = fs.readdirSync(out).filter((f) => f.endsWith(".js"));
+    expect(fs.readFileSync(path.join(out, "index.js"), "utf8")).toContain(ported);
+    for (const file of bundles) {
       const bundle = fs.readFileSync(path.join(out, file), "utf8");
       if (!bundle.includes(ported)) continue;
       expect(bundle, file).toContain(BCDEC_COPYRIGHT);
