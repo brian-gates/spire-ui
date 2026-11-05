@@ -1,8 +1,11 @@
-export type FallbackKey =
-  | "relic" | "potion" | "card"
-  | "class.ironclad" | "class.silent" | "class.defect" | "class.regent" | "class.necrobinder" | "class.unknown"
-  | "room.monster" | "room.elite" | "room.rest" | "room.shop" | "room.treasure" | "room.event" | "room.boss" | "room.unknown"
-  | "stat.hp" | "stat.gold" | "stat.energy" | "stat.ascension" | "stat.deck";
+/** Every fallback glyph key; the type is derived so stories and ART stay complete. */
+export const FALLBACK_KEYS = [
+  "relic", "potion", "card",
+  "class.ironclad", "class.silent", "class.defect", "class.regent", "class.necrobinder", "class.unknown",
+  "room.monster", "room.elite", "room.rest", "room.shop", "room.treasure", "room.event", "room.boss", "room.unknown",
+  "stat.hp", "stat.gold", "stat.energy", "stat.ascension", "stat.deck",
+] as const;
+export type FallbackKey = (typeof FALLBACK_KEYS)[number];
 
 const CLASSES = ["IRONCLAD", "SILENT", "DEFECT", "REGENT", "NECROBINDER"];
 const ROOMS = ["MONSTER", "ELITE", "REST", "SHOP", "TREASURE", "EVENT", "BOSS"];

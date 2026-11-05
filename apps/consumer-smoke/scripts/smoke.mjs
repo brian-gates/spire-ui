@@ -82,10 +82,19 @@ const css = join(app, "src", "index.css");
 const theme = ["styles/spire.css", "src/styles/spire.css"].find((f) => existsSync(join(app, f)));
 if (!theme) { cleanup(); console.error("FAILED: shadcn add did not install styles/spire.css"); process.exit(1); }
 writeFileSync(css, readFileSync(css, "utf8") + `\n@import "${relative(dirname(css), join(app, theme))}";\n`);
-// shadcn prefixes colour keys with `color-` itself; a doubled prefix means registry.json cssVars keys are wrong.
-for (const f of [css, join(app, theme)]) {
-  if (readFileSync(f, "utf8").includes("color-color")) { cleanup(); console.error(`FAILED: ${f} has doubled --color-color-* theme aliases`); process.exit(1); }
+// spire.css is the single source of truth: shadcn must not add colour/font cssVars on top of it.
+const themeCss = readFileSync(join(app, theme), "utf8");
+const block = /@theme static \{([^}]*)\}/.exec(themeCss)?.[1] ?? "";
+const tokens = [...block.matchAll(/^\s*(--[\w-]+):/gm)].map((m) => m[1]);
+if (tokens.length < 20) { cleanup(); console.error("FAILED: could not read the @theme tokens from installed spire.css"); process.exit(1); }
+const installed = [css, join(app, theme)].map((f) => readFileSync(f, "utf8")).join("\n");
+if (installed.includes("color-color")) { cleanup(); console.error("FAILED: doubled --color-color-* theme aliases"); process.exit(1); }
+for (const t of tokens) {
+  const n = [...installed.matchAll(new RegExp(`^\\s*${t}\\s*:`, "gm"))].length;
+  if (n !== 1) { cleanup(); console.error(`FAILED: ${t} is defined ${n} times in the installed CSS, expected once`); process.exit(1); }
 }
+// Plain --spire-* / --class-* / --rarity-* variables would be shadcn cssVars duplicates too.
+if (/^\s*--(spire|class|rarity)-[\w-]+\s*:/m.test(installed)) { cleanup(); console.error("FAILED: shadcn wrote raw --spire-*/--class-*/--rarity-* variables"); process.exit(1); }
 await run("npm", ["run", "build"]);
 
 const preview = spawn(join(app, "node_modules", ".bin", "vite"), ["preview", "--host", "127.0.0.1", "--port", String(APP_PORT), "--strictPort"], { cwd: app, stdio: "ignore" });

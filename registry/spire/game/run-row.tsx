@@ -22,12 +22,14 @@ export interface RunView {
 /** One run as a full-width row: header, then a line per player. Responds to its own width, not the viewport. */
 export function RunRow(props: { run: RunView; actions?: ReactNode }) {
   const { run, actions } = props;
+  // One decision per run so the deck column lines up across rows.
+  const showDeck = run.players.some((p) => "deckSize" in p);
   return (
     <article data-slot="run-row" data-ended={run.ended ? "true" : undefined} className="@container w-full min-w-0">
       <Panel className={cn("grid gap-3 p-3", run.ended && "opacity-80")}>
         <RunHeader run={run} actions={actions} />
         <ul aria-label="Players" className="m-0 grid list-none gap-3 border-t border-spire-panel-edge/60 p-0 pt-3">
-          {run.players.map((p) => <PlayerRow key={p.id} player={p} />)}
+          {run.players.map((p) => <PlayerRow key={p.id} player={p} showDeck={showDeck} />)}
         </ul>
       </Panel>
     </article>

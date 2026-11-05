@@ -1,14 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { FallbackIcon } from "../../../registry/spire/icons/fallback";
-import type { FallbackKey } from "../../../registry/spire/icons/fallback-keys";
+import { FALLBACK_KEYS as KEYS } from "../../../registry/spire/icons/fallback-keys";
 import { SpireIcon } from "../../../registry/spire/ui/spire-icon";
 
-const KEYS: FallbackKey[] = [
-  "relic", "potion", "card",
-  "class.ironclad", "class.silent", "class.defect", "class.regent", "class.necrobinder", "class.unknown",
-  "room.monster", "room.elite", "room.rest", "room.shop", "room.treasure", "room.event", "room.boss", "room.unknown",
-  "stat.hp", "stat.gold", "stat.energy", "stat.ascension",
-];
 
 function FallbackGrid() {
   return (

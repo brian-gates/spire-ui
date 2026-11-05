@@ -14,33 +14,7 @@
           "type": "registry:theme",
           "target": "~/styles/spire.css"
         }
-      ],
-      "cssVars": {
-        "theme": {
-          "spire-bg": "#0a1115",
-          "spire-panel": "#18262d",
-          "spire-panel-edge": "#3b5560",
-          "spire-ink": "#f3e9d2",
-          "spire-muted": "#a9b8b8",
-          "spire-gold": "#f0c75e",
-          "spire-hp": "#ff8a7d",
-          "spire-energy": "#5fb0e8",
-          "class-ironclad": "#ec6a5e",
-          "class-silent": "#6fbf68",
-          "class-defect": "#5fb0e8",
-          "class-regent": "#e8a944",
-          "class-necrobinder": "#c49ae6",
-          "class-colorless": "#c2cbcb",
-          "rarity-common": "#a9b8b8",
-          "rarity-uncommon": "#6fb8e0",
-          "rarity-rare": "#f0c75e",
-          "rarity-boss": "#ec6a5e",
-          "rarity-event": "#6fbf68",
-          "rarity-starter": "#8fa3a3",
-          "font-spire-display": "\"Kreon\", Georgia, \"Iowan Old Style\", serif",
-          "font-spire-body": "\"Spectral\", Georgia, \"Iowan Old Style\", serif"
-        }
-      }
+      ]
     },
     {
       "name": "spire-utils",

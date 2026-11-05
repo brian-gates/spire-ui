@@ -167,5 +167,20 @@ describe("unknown relics and run position", () => {
     expect(screen.getByText("Act 2")).toBeTruthy();
     expect(screen.getByText("Floor 21")).toBeTruthy();
     expect(screen.getByText("Ascension unknown")).toBeTruthy();
+  });});
+
+describe("RunRow deck column", () => {
+  it("shows the deck stat on every row when any player has deckSize, ? for the rest", () => {
+    const { container } = render(<RunRow run={{ ...run, players: [{ ...you, deckSize: 20 }, friend] }} />);
+    const rows = Array.from(container.querySelectorAll("[data-slot=player-row]"));
+    expect(rows.length).toBe(2);
+    for (const r of rows) expect(r.className).toContain("@3xl:grid-cols-[2rem_minmax(7.5rem,11rem)_6.5rem_4.75rem_3.75rem");
+    expect(screen.getByRole("img", { name: "Deck: 20" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Deck: unknown" })).toBeTruthy();
+  });
+  it("has no deck column when no player has deckSize", () => {
+    const { container } = render(<RunRow run={run} />);
+    expect(screen.queryByRole("img", { name: /^Deck/ })).toBeNull();
+    for (const r of container.querySelectorAll("[data-slot=player-row]")) expect(r.className).not.toContain("3.75rem");
   });
 });

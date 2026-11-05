@@ -18,21 +18,12 @@ describe("registry build", () => {
     expect(JSON.stringify(item)).toContain("--color-spire-gold");
   });
 
-  it("theme cssVars carry each spire.css token exactly once and no doubled color- prefix", () => {
+  it("spire-theme ships spire.css as the single source of truth, with no colour or font cssVars", () => {
     const item = read("spire-theme");
-    const css = readFileSync(join(__dirname, "..", "registry/spire/theme/spire.css"), "utf8");
-    const block = /@theme static \{([^}]*)\}/.exec(css)?.[1] ?? "";
-    const tokens = [...block.matchAll(/^\s*(--[\w-]+):/gm)].map((m) => m[1]);
-    expect(tokens.length).toBeGreaterThan(20);
-    expect(JSON.stringify(item)).not.toContain("color-color");
-    // shadcn prefixes colour keys with `color-` itself, so a colour token --color-x is declared as the key `x`.
-    const keys = Object.keys(item.cssVars.theme as Record<string, string>);
-    const expected = tokens.map((t) => t.replace(/^--color-/, "").replace(/^--/, ""));
-    expect([...keys].sort()).toEqual([...expected].sort());
-    expect(new Set(keys).size).toBe(keys.length);
-    for (const t of tokens.filter((t) => t.startsWith("--color-spire-"))) {
-      expect(keys.filter((k) => k === t.slice("--color-".length)).length).toBe(1);
-    }
+    expect(item.cssVars?.theme ?? {}).toEqual({});
+    expect(JSON.stringify(item.cssVars ?? {})).not.toMatch(/color-|font-|spire-/);
+    expect(item.files.map((f: { path: string }) => f.path)).toEqual(["registry/spire/theme/spire.css"]);
+    expect(item.files[0].content).toContain("--color-spire-gold");
   });
 
   it("builds spire-utils as a registry:lib containing cn", () => {

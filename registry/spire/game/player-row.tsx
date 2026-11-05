@@ -11,7 +11,7 @@ export interface RunPlayerView {
   hp?: number | null;
   maxHp?: number | null;
   gold?: number | null;
-  /** Cards in the deck. Omit to hide the stat; null shows "?" for an unknown size. */
+  /** Cards in the deck. Leave the key out to hide the stat (RunRow shows the column for every row if any player has the key); null shows "?". */
   deckSize?: number | null;
   /** Optional muted subtitle under the name, e.g. "The Silent". */
   characterLabel?: string;
@@ -27,9 +27,9 @@ export interface RunPlayerView {
  * Renders an `li`; place it inside a `ul`. Inside a `@container` ancestor (RunRow provides one), narrow widths
  * wrap deck size, relics and potions onto their own line under the name and stats.
  */
-export function PlayerRow(props: { player: RunPlayerView }) {
+export function PlayerRow(props: { player: RunPlayerView; showDeck?: boolean }) {
   const { player: p } = props;
-  const hasDeck = p.deckSize !== undefined;
+  const hasDeck = props.showDeck ?? "deckSize" in p;
   return (
     <li
       data-slot="player-row"
