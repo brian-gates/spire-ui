@@ -18,10 +18,11 @@ export function TooltipTrigger(props: ComponentProps<typeof TooltipPrimitive.Tri
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
 }
 
-/** `bare`: no panel of its own, for content that draws its own (such as GameTip). */
+/** `bare`: no panel of its own, for content that draws its own (such as GameTip). Kept 8px inside the viewport by default. */
 export function TooltipContent({
   className,
   sideOffset = 6,
+  collisionPadding = 8,
   bare = false,
   children,
   ...props
@@ -32,6 +33,7 @@ export function TooltipContent({
         data-slot="tooltip-content"
         data-bare={bare || undefined}
         sideOffset={sideOffset}
+        collisionPadding={collisionPadding}
         className={cn(
           bare ? "z-50" : "spire-panel font-spire-body z-50 max-w-xs px-3 py-2 text-sm text-spire-ink",
           className,
