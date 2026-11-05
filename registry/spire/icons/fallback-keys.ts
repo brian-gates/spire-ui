@@ -2,11 +2,11 @@ export type FallbackKey =
   | "relic" | "potion" | "card"
   | "class.ironclad" | "class.silent" | "class.defect" | "class.regent" | "class.necrobinder" | "class.unknown"
   | "room.monster" | "room.elite" | "room.rest" | "room.shop" | "room.treasure" | "room.event" | "room.boss" | "room.unknown"
-  | "stat.hp" | "stat.gold" | "stat.energy" | "stat.ascension";
+  | "stat.hp" | "stat.gold" | "stat.energy" | "stat.ascension" | "stat.deck";
 
 const CLASSES = ["IRONCLAD", "SILENT", "DEFECT", "REGENT", "NECROBINDER"];
 const ROOMS = ["MONSTER", "ELITE", "REST", "SHOP", "TREASURE", "EVENT", "BOSS"];
-const STATS = ["HP", "GOLD", "ENERGY", "ASCENSION"];
+const STATS = ["HP", "GOLD", "ENERGY", "ASCENSION", "DECK"];
 
 export function fallbackKeyFor(id: string): FallbackKey {
   const dot = id.indexOf(".");

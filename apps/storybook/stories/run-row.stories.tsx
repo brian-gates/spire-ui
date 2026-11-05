@@ -6,14 +6,14 @@ const relics = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `RELIC.
 const ago = (h: number) => new Date(Date.now() - h * 3_600_000);
 
 const ironclad: RunPlayerView = {
-  id: "a", name: "Ayla", character: "CHARACTER.IRONCLAD", hp: 52, maxHp: 80, gold: 214, isYou: true,
+  id: "a", name: "Ayla", character: "CHARACTER.IRONCLAD", hp: 52, maxHp: 80, gold: 214, deckSize: 24, characterLabel: "The Ironclad", isYou: true,
   relics: [{ id: "RELIC.BURNING_BLOOD" }, ...relics(4)], potions: [{ id: "POTION.EXAMPLE", slot: 0 }], maxPotionSlots: 3,
 };
 const players: RunPlayerView[] = [
   ironclad,
-  { id: "b", name: "Bo", character: "CHARACTER.SILENT", hp: 61, maxHp: 70, gold: 90, relics: relics(6), potions: [], maxPotionSlots: 3 },
-  { id: "c", name: "Cass", character: "CHARACTER.DEFECT", hp: 30, maxHp: 75, gold: 410, relics: relics(10), potions: [{ id: "POTION.EXAMPLE", slot: 1 }], maxPotionSlots: 3 },
-  { id: "d", name: "Dev", character: "CHARACTER.REGENT", hp: 77, maxHp: 77, gold: 0, relics: relics(3), potions: [], maxPotionSlots: 2 },
+  { id: "b", name: "Bo", character: "CHARACTER.SILENT", hp: 61, maxHp: 70, gold: 90, deckSize: 31, characterLabel: "The Silent", relics: relics(6), potions: [], maxPotionSlots: 3 },
+  { id: "c", name: "Cass", character: "CHARACTER.DEFECT", hp: 30, maxHp: 75, gold: 410, deckSize: 18, characterLabel: "The Defect", relics: relics(10), potions: [{ id: "POTION.EXAMPLE", slot: 1 }], maxPotionSlots: 3 },
+  { id: "d", name: "Dev", character: "CHARACTER.REGENT", hp: 77, maxHp: 77, gold: 0, deckSize: 12, characterLabel: "The Regent", relics: relics(3), potions: [], maxPotionSlots: 2 },
 ];
 const base: RunView = { id: "r", act: 2, floor: 21, ascension: 2, mode: "regular", savedAt: ago(3), savedBy: "Bo", players };
 
@@ -36,6 +36,14 @@ export const ModdedUnknowns: Story = {
         { id: "a", name: "Ayla", character: "CHARACTER.MODDED_HERO", hp: 40, maxHp: 66, gold: 12, isYou: true, relics: [{ id: "RELIC.MODDED_THING" }, { id: "WEIRD" }], potions: [{ id: "POTION.MODDED_BREW", slot: 0 }], maxPotionSlots: 3 },
         { id: "b", name: "Bo", character: "CHARACTER.SILENT", relics: [{ id: "RELIC.THE_ODD_ONE" }] },
       ],
+    },
+  },
+};
+export const UnknownRunPosition: Story = {
+  args: {
+    run: {
+      ...base, act: null, floor: null, ascension: null,
+      players: [{ ...ironclad, deckSize: null, relics: undefined }, { ...players[1], relics: [] }],
     },
   },
 };

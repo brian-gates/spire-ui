@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { SpireAssets } from "../../registry/spire/lib/assets-provider";
 import type { SpireManifest } from "../../registry/spire/lib/assets";
 import { ClassBadge } from "../../registry/spire/game/class-badge";
-import { StatEnergy, StatGold, StatHP } from "../../registry/spire/game/stat";
+import { StatDeck, StatEnergy, StatGold, StatHP } from "../../registry/spire/game/stat";
 import { RelicStrip } from "../../registry/spire/game/relic-strip";
 import { PotionSlots } from "../../registry/spire/game/potion-slots";
 
@@ -130,5 +130,27 @@ describe("PotionSlots", () => {
     render(<PotionSlots maxSlots={1} potions={[{ id: "POTION.FIRE_POTION", slot: 0 }]} />);
     await user.tab();
     expect((await screen.findByRole("tooltip")).textContent).toContain("Fire Potion");
+  });
+});
+
+describe("RelicStrip unknown versus empty", () => {
+  it("announces Relics unknown for undefined", () => {
+    render(<RelicStrip relics={undefined} />);
+    expect(screen.getByText("Relics unknown")).toBeTruthy();
+    expect(screen.queryByText("No relics")).toBeNull();
+  });
+  it("announces No relics for an empty list", () => {
+    render(<RelicStrip relics={[]} />);
+    expect(screen.getByText("No relics")).toBeTruthy();
+  });
+});
+
+describe("StatDeck", () => {
+  it("formats the deck size and handles null", () => {
+    render(<StatDeck value={31} />);
+    expect(screen.getByLabelText("Deck: 31")).toBeTruthy();
+    cleanup();
+    render(<StatDeck value={null} />);
+    expect(screen.getByLabelText("Deck: unknown")).toBeTruthy();
   });
 });

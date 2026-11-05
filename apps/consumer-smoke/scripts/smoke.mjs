@@ -82,6 +82,10 @@ const css = join(app, "src", "index.css");
 const theme = ["styles/spire.css", "src/styles/spire.css"].find((f) => existsSync(join(app, f)));
 if (!theme) { cleanup(); console.error("FAILED: shadcn add did not install styles/spire.css"); process.exit(1); }
 writeFileSync(css, readFileSync(css, "utf8") + `\n@import "${relative(dirname(css), join(app, theme))}";\n`);
+// shadcn prefixes colour keys with `color-` itself; a doubled prefix means registry.json cssVars keys are wrong.
+for (const f of [css, join(app, theme)]) {
+  if (readFileSync(f, "utf8").includes("color-color")) { cleanup(); console.error(`FAILED: ${f} has doubled --color-color-* theme aliases`); process.exit(1); }
+}
 await run("npm", ["run", "build"]);
 
 const preview = spawn(join(app, "node_modules", ".bin", "vite"), ["preview", "--host", "127.0.0.1", "--port", String(APP_PORT), "--strictPort"], { cwd: app, stdio: "ignore" });

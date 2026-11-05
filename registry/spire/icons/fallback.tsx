@@ -44,6 +44,8 @@ const ART: Record<FallbackKey, ReactNode> = {
   "stat.gold": <path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 4a6 6 0 1 0 0 12 6 6 0 0 0 0-12Zm0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z" fillRule="evenodd" />,
   // energy orb with a spark
   "stat.energy": <path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm1 4-5 7h3.5L10.5 18l5-7H12l1-5Z" fillRule="evenodd" />,
+  // a small stack of cards: two edges peeking out behind a front card with a diamond
+  "stat.deck": <path d="M9 2h11v14h-1.5V3.5H9V2ZM6 5h11v14h-1.5V6.5H6V5ZM4.5 8h8A1.5 1.5 0 0 1 14 9.5v11a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 3 20.5v-11A1.5 1.5 0 0 1 4.5 8Zm4 3.5-2 3 2 3 2-3-2-3Z" fillRule="evenodd" />,
   // stacked upward chevrons
   "stat.ascension": <path d="m12 2 8 7-1.6 1.8L12 5.2 5.6 10.8 4 9l8-7Zm0 7 8 7-1.6 1.8L12 12.2l-6.4 5.6L4 16l8-7Zm0 7 8 6h-3.2L12 18.4 7.2 22H4l8-6Z" />,
 };

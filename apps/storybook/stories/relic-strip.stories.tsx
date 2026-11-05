@@ -15,6 +15,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Five: Story = {};
 export const None: Story = { args: { relics: [] } };
+export const Unknown: Story = { args: { relics: undefined } };
 export const Forty: Story = { args: { relics: make(40) } };
 export const UnknownAndModded: Story = {
   args: { relics: [{ id: "RELIC.BURNING_BLOOD" }, { id: "RELIC.MODDED_THING_OF_DOOM" }, { id: "WEIRD" }, { id: "RELIC.THE_ODD_ONE" }] },

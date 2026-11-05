@@ -58,9 +58,13 @@ function Overflow({ hidden }: { hidden: { id: string }[] }) {
   );
 }
 
-/** Relics in acquisition order; beyond `max` (default 8) the rest collapse into a "+N" button listing their names. */
-export function RelicStrip(props: { relics: { id: string }[]; max?: number }) {
+/**
+ * Relics in acquisition order; beyond `max` (default 8) the rest collapse into a "+N" button listing their names.
+ * `undefined` means the relics are unknown (not recorded), which is different from an empty list ("No relics").
+ */
+export function RelicStrip(props: { relics: { id: string }[] | undefined; max?: number }) {
   const { relics, max = 8 } = props;
+  if (relics === undefined) return <span className="text-sm text-spire-muted">Relics unknown</span>;
   if (relics.length === 0) return <span className="text-sm text-spire-muted">No relics</span>;
   const limit = Math.max(0, Math.floor(max));
   const shown = relics.slice(0, limit);

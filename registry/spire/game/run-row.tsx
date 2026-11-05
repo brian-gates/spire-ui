@@ -8,9 +8,10 @@ export type { RunPlayerView };
 
 export interface RunView {
   id: string;
-  act: number;
-  floor: number;
-  ascension: number;
+  /** null when the save does not record it; rendered as "?". */
+  act: number | null;
+  floor: number | null;
+  ascension: number | null;
   mode: "regular" | "modded";
   ended?: boolean;
   savedAt?: Date;

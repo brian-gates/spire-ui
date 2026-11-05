@@ -277,6 +277,7 @@ describe("mapIds", () => {
       { path: "images/atlases/ui_atlas.sprites/map/icons/map_monster.tres", data: atlasTres("images/atlases/ui_atlas_0.png", 0, 0, 8, 8) },
       { path: ".godot/imported/monster.ctex", data: pngCtex(await solidPng(8, 8, [1, 2, 3]), 8, 8) },
       { path: "images/atlases/ui_atlas.sprites/top_bar/top_bar_gold.tres", data: atlasTres("images/atlases/ui_atlas_0.png", 0, 0, 8, 8) },
+      { path: "images/atlases/ui_atlas.sprites/top_bar/top_bar_deck.tres", data: atlasTres("images/atlases/ui_atlas_0.png", 0, 0, 8, 8) },
       { path: "images/atlases/ui_atlas_0.png.import", data: importFile(".godot/imported/ui_atlas.ctex") },
       { path: ".godot/imported/ui_atlas.ctex", data: pngCtex(await solidPng(8, 8, [1, 2, 3]), 8, 8) },
     );
@@ -293,6 +294,7 @@ describe("mapIds", () => {
     expect(ids.get("CHARACTER.SILENT")).toMatchObject({ texture: null });
     expect(ids.get("ROOM.MONSTER")?.texture?.entry.path).toBe(".godot/imported/monster.ctex");
     expect(ids.get("STAT.GOLD")).toMatchObject({ kind: "ui", slug: "gold", texture: { entry: { path: ".godot/imported/ui_atlas.ctex" } } });
+    expect(ids.get("STAT.DECK")).toMatchObject({ kind: "ui", slug: "deck", texture: { entry: { path: ".godot/imported/ui_atlas.ctex" } } });
     expect(ids.has("CARD.ANYTHING")).toBe(false);
     for (const [id, m] of ids) {
       expect(id).toMatch(/^[A-Z]+\.[A-Z0-9_]+$/);

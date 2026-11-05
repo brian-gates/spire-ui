@@ -96,6 +96,7 @@ const FIXED: FixedId[] = [
     title: ["static_hover_tips", "ENERGY.title"],
   },
   { id: "STAT.ASCENSION", kind: "ui", sources: [ui("top_bar/top_bar_ascension")] },
+  { id: "STAT.DECK", kind: "ui", sources: [ui("top_bar/top_bar_deck")] },
 ];
 
 interface Collection {

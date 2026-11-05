@@ -37,11 +37,11 @@ const potions = [{ id: "POTION.FIRE_POTION", slot: 0 }, { id: "POTION.FAIRY_IN_A
 const ago = (h: number) => new Date(Date.now() - h * 3_600_000);
 
 const ayla: RunPlayerView = {
-  id: "a", name: "Ayla", character: "CHARACTER.IRONCLAD", hp: 52, maxHp: 80, gold: 214, isYou: true,
+  id: "a", name: "Ayla", character: "CHARACTER.IRONCLAD", hp: 52, maxHp: 80, gold: 214, deckSize: 24, characterLabel: "The Ironclad", isYou: true,
   relics: relics(5), potions: [potions[0]], maxPotionSlots: 3,
 };
 const bo: RunPlayerView = {
-  id: "b", name: "Bo", character: "CHARACTER.SILENT", hp: 61, maxHp: 70, gold: 90, relics: relics(11), potions, maxPotionSlots: 3,
+  id: "b", name: "Bo", character: "CHARACTER.SILENT", hp: 61, maxHp: 70, gold: 90, deckSize: 31, characterLabel: "The Silent", relics: relics(11), potions, maxPotionSlots: 3,
 };
 const run: RunView = { id: "r", act: 2, floor: 21, ascension: 2, mode: "regular", savedAt: ago(3), savedBy: "Bo", players: [ayla, bo] };
 const fortyRelics: RunView = { ...run, id: "40", players: [{ ...ayla, name: "Wolfeschlegelsteinhausen-Bergerd", relics: relics(40) }] };
@@ -177,7 +177,7 @@ export const COMPONENTS: ComponentDoc[] = [
   {
     slug: "relic-strip", name: "RelicStrip", summary: "Relics in acquisition order; the overflow collapses into a button listing their names.",
     usage: `<RelicStrip relics={[{ id: "RELIC.ANCHOR" }, { id: "RELIC.LANTERN" }]} max={8} />`,
-    Demo: () => (<div className="grid gap-4"><RelicStrip relics={relics(5)} /><RelicStrip relics={relics(20)} max={10} /></div>),
+    Demo: () => (<div className="grid gap-4"><RelicStrip relics={relics(5)} /><RelicStrip relics={relics(20)} max={10} /><RelicStrip relics={undefined} /></div>),
   },
   {
     slug: "potion-slots", name: "PotionSlots", summary: "A fixed potion belt with empty slots. Potions that fit no slot are appended, never dropped.",
@@ -195,8 +195,8 @@ export const COMPONENTS: ComponentDoc[] = [
     ),
   },
   {
-    slug: "player-row", name: "PlayerRow", summary: "One player: class, name, HP, gold, relics and potions. Missing data shows as unknown, not zero.",
-    usage: `<PlayerRow player={{ id: "a", name: "Ayla", character: "CHARACTER.IRONCLAD", hp: 52, maxHp: 80, relics }} />`,
+    slug: "player-row", name: "PlayerRow", summary: "One player: class, name, HP, gold, deck size, relics and potions. Missing data shows as unknown, not zero.",
+    usage: `<PlayerRow player={{ id: "a", name: "Ayla", character: "CHARACTER.IRONCLAD", hp: 52, maxHp: 80, deckSize: 24, characterLabel: "The Ironclad", relics }} />`,
     Demo: () => (
       <ul aria-label="Players" className="m-0 grid list-none gap-3 p-0">
         <PlayerRow player={ayla} />

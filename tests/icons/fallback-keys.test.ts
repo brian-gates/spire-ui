@@ -20,3 +20,9 @@ describe("stat.ascension", () => {
     expect(fallbackKeyFor("STAT.ASCENSION")).toBe("stat.ascension");
   });
 });
+
+describe("stat.deck", () => {
+  it("maps STAT.DECK to its own glyph", () => {
+    expect(fallbackKeyFor("STAT.DECK")).toBe("stat.deck");
+  });
+});

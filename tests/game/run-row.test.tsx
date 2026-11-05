@@ -116,3 +116,56 @@ describe("PlayerRow", () => {
     expect(loot.querySelector("[aria-label=Potions]")).toBeTruthy();
   });
 });
+
+describe("deck size and class label", () => {
+  it("shows the deck size with an accessible label", () => {
+    render(<ul><PlayerRow player={{ ...friend, deckSize: 27 }} /></ul>);
+    expect(screen.getByRole("img", { name: "Deck: 27" })).toBeTruthy();
+    expect(screen.getByText("27")).toBeTruthy();
+  });
+  it("shows a null deck size as unknown and omits the stat when not provided", () => {
+    const { rerender } = render(<ul><PlayerRow player={{ ...friend, deckSize: null }} /></ul>);
+    expect(screen.getByRole("img", { name: "Deck: unknown" })).toBeTruthy();
+    rerender(<ul><PlayerRow player={friend} /></ul>);
+    expect(screen.queryByRole("img", { name: /^Deck/ })).toBeNull();
+  });
+  it("renders the class label as a muted truncating subtitle", () => {
+    const { container } = render(<ul><PlayerRow player={{ ...friend, characterLabel: "The Silent" }} /></ul>);
+    const el = container.querySelector("[data-slot=player-class]") as HTMLElement;
+    expect(el.textContent).toBe("The Silent");
+    expect(el.className).toMatch(/truncate/);
+    expect(el.className).toMatch(/text-spire-muted/);
+    expect(el.getAttribute("title")).toBe("The Silent");
+  });
+  it("has no subtitle without a class label", () => {
+    const { container } = render(<ul><PlayerRow player={friend} /></ul>);
+    expect(container.querySelector("[data-slot=player-class]")).toBeNull();
+  });
+});
+
+describe("unknown relics and run position", () => {
+  it("says Relics unknown for undefined relics and No relics for an empty list", () => {
+    const { rerender } = render(<ul><PlayerRow player={friend} /></ul>);
+    expect(screen.getByText("Relics unknown")).toBeTruthy();
+    expect(screen.queryByText("No relics")).toBeNull();
+    rerender(<ul><PlayerRow player={{ ...friend, relics: [] }} /></ul>);
+    expect(screen.getByText("No relics")).toBeTruthy();
+    expect(screen.queryByText("Relics unknown")).toBeNull();
+  });
+  it("renders null act, floor and ascension as ? with accessible text", () => {
+    render(<RunHeader run={{ ...run, act: null, floor: null, ascension: null, mode: "modded" }} />);
+    expect(screen.getByText("Act ?")).toBeTruthy();
+    expect(screen.getByText("Floor ?")).toBeTruthy();
+    expect(screen.getByText("A?")).toBeTruthy();
+    expect(screen.getByText("Act unknown")).toBeTruthy();
+    expect(screen.getByText("Floor unknown")).toBeTruthy();
+    expect(screen.getByText("Ascension unknown")).toBeTruthy();
+    expect(screen.getByText("Modded")).toBeTruthy();
+  });
+  it("keeps the other values when only the ascension is unknown", () => {
+    render(<RunRow run={{ ...run, ascension: null }} />);
+    expect(screen.getByText("Act 2")).toBeTruthy();
+    expect(screen.getByText("Floor 21")).toBeTruthy();
+    expect(screen.getByText("Ascension unknown")).toBeTruthy();
+  });
+});

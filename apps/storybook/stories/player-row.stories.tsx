@@ -6,7 +6,7 @@ const meta = {
   component: PlayerRow,
   args: {
     player: {
-      id: "a", name: "Ayla", character: "CHARACTER.IRONCLAD", hp: 52, maxHp: 80, gold: 214, isYou: true,
+      id: "a", name: "Ayla", character: "CHARACTER.IRONCLAD", hp: 52, maxHp: 80, gold: 214, deckSize: 24, characterLabel: "The Ironclad", isYou: true,
       relics: [{ id: "RELIC.BURNING_BLOOD" }, { id: "RELIC.EXAMPLE_RELIC_1" }], potions: [{ id: "POTION.EXAMPLE", slot: 0 }], maxPotionSlots: 3,
     },
   },
@@ -18,3 +18,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Basic: Story = {};
 export const Unknown: Story = { args: { player: { id: "b", name: "Bo", character: "CHARACTER.MODDED_HERO" } } };
+export const UnknownRelicsAndDeck: Story = {
+  args: { player: { id: "c", name: "Cass", character: "CHARACTER.SILENT", characterLabel: "The Silent", hp: 40, maxHp: 70, gold: 12, deckSize: null } },
+};

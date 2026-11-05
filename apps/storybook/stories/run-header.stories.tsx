@@ -13,3 +13,4 @@ type Story = StoryObj<typeof meta>;
 
 export const Regular: Story = {};
 export const ModdedEnded: Story = { args: { run: { act: 3, floor: 40, ascension: 10, mode: "modded", ended: true } } };
+export const UnknownPosition: Story = { args: { run: { act: null, floor: null, ascension: null, mode: "regular" } } };

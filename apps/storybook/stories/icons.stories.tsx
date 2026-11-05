@@ -35,7 +35,7 @@ const meta = {
       control: "select",
       options: [
         "RELIC.BURNING_BLOOD", "POTION.FIRE_POTION", "CARD.STRIKE", "CHARACTER.SILENT", "CHARACTER.MODDED_HERO",
-        "ROOM.ELITE", "ROOM.UNKNOWN_ROOM", "STAT.GOLD", "STAT.ASCENSION", "UNKNOWN", "MODDED.SOMETHING_NEW",
+        "ROOM.ELITE", "ROOM.UNKNOWN_ROOM", "STAT.GOLD", "STAT.ASCENSION", "STAT.DECK", "UNKNOWN", "MODDED.SOMETHING_NEW",
       ],
     },
     size: { control: { type: "range", min: 16, max: 160, step: 8 } },

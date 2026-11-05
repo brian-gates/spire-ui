@@ -59,7 +59,7 @@ What is extracted:
 - `ROOM.MONSTER|ELITE|REST|SHOP|TREASURE|EVENT`: run history room icons; `ROOM.UNKNOWN`: the
   map's `?` icon. `ROOM.BOSS` has no generic icon in the game (each boss has its own), so it keeps
   the fallback.
-- `STAT.HP|GOLD|ASCENSION`: top bar icons; `STAT.ENERGY`: the colourless energy orb.
+- `STAT.HP|GOLD|ASCENSION|DECK`: top bar icons; `STAT.ENERGY`: the colourless energy orb.
 - `--fonts`: the game's Kreon Bold and Spectral Bold, as the TrueType files the game embeds (not
   subset or converted), recorded as `fonts.display` and `fonts.body`. They are the game's copies,
   for local use only.

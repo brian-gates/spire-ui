@@ -39,3 +39,8 @@ export function StatGold(props: { value: number | null }) {
 export function StatEnergy(props: { value: number | null }) {
   return <Stat icon="STAT.ENERGY" label="Energy" text={show(props.value)} known={props.value !== null} tone="text-spire-energy" />;
 }
+
+/** Deck size (number of cards); null renders "?". */
+export function StatDeck(props: { value: number | null }) {
+  return <Stat icon="STAT.DECK" label="Deck" text={show(props.value)} known={props.value !== null} tone="text-spire-ink" />;
+}
