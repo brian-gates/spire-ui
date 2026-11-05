@@ -12,7 +12,7 @@ const fixture = {
   gameVersion: "v0.0.0",
   generatedAt: "2026-01-01T00:00:00.000Z",
   items: {
-    "RELIC.ANCHOR": { kind: "relic", file: "relic/anchor@64.webp", w: 64, h: 64, name: "Anchor", description: "Text." },
+    "RELIC.ANCHOR": { kind: "relic", file: "relic/anchor@64.webp", w: 64, h: 64, widths: [32, 64], name: "Anchor", description: "Text." },
     "POTION.X": { kind: "potion", file: "potion/x@64.webp", w: 40, h: 48 },
     "CARD.X": { kind: "card", file: "card/x@64.webp", w: 64, h: 48 },
     "CARD.Y": {

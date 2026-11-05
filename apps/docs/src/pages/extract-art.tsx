@@ -4,7 +4,7 @@ import { CodeBlock } from "../code-block";
 const OPTIONS: [string, string, string][] = [
   ["--game-dir <dir>", "Steam's usual folders", "Folder holding the game's .pck. Without it the CLI looks in Steam's default library on macOS, Windows and Linux, plus every library in libraryfolders.vdf."],
   ["--out <dir>", "./public/spire", "Output folder, replaced as a whole on every run, and only if it is empty or was written by this CLI."],
-  ["--sizes <list>", "64", "Icon box sizes in px. Icons keep their aspect ratio and are never upscaled."],
+  ["--sizes <list>", "64,128,256", "Icon box sizes in px (at most 16). Each icon is written at every size that does not upscale it, named by its pixel width, so browsers pick one by rendered size and pixel density. Sizes past an image's own size are skipped; the first is written at the image's own size."],
   ["--kinds <list>", "relic,potion,class,room,ui", "Add card for card portraits."],
   ["--fonts", "off", "Also copy the game's fonts, for your local use only."],
 ];
@@ -19,7 +19,7 @@ export function ExtractArt() {
       </p>
 
       <h2 className="font-spire-display mt-8 text-xl font-bold">Run it</h2>
-      <div className="mt-2"><CodeBlock>{"npx spire-ui extract-art\nnpx spire-ui extract-art --game-dir \"D:/Games/Slay the Spire 2\" --out public/spire --sizes 32,64"}</CodeBlock></div>
+      <div className="mt-2"><CodeBlock>{"npx spire-ui extract-art\nnpx spire-ui extract-art --game-dir \"D:/Games/Slay the Spire 2\" --out public/spire --sizes 64,128,256,512"}</CodeBlock></div>
       <p className="mt-2 text-spire-muted">Requires Node.js 20.9 or later. It reads the game's resource pack and writes WebP icons plus a manifest.</p>
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[34rem] border-collapse text-left text-sm">
@@ -41,6 +41,12 @@ export function ExtractArt() {
       <div className="mt-2">
         <CodeBlock>{`import { SpireAssets } from "@/lib/spire/lib/assets-provider";\n\n<SpireAssets base="/spire" manifestUrl="/spire/manifest.json">\n  <App />\n</SpireAssets>`}</CodeBlock>
       </div>
+      <p className="mt-2">
+        Each item lists its files' pixel <code>widths</code>, and <code>SpireIcon</code> renders them as a <code>srcset</code> with{" "}
+        <code>sizes</code> set to the icon's own CSS size, so a 32px icon loads the 64px file on a 2x screen. When CSS draws the
+        art at a fluid size, pass your own: <code>{'<SpireIcon id={id} size={56} sizes="(max-width: 480px) 90vw, 320px" />'}</code>.
+        Manifests without <code>widths</code> keep using the single largest file.
+      </p>
       <p className="mt-2 text-spire-muted">
         Anything the manifest lacks, such as a modded relic, keeps its fallback icon. See{" "}
         <Link to="/components/run-row">RunRow</Link> for a before and after.

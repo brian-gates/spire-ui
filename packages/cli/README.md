@@ -13,14 +13,14 @@ Requires Node.js 20.9 or later.
 ```sh
 npx spire-ui extract-art                 # finds a Steam install, writes ./public/spire
 npx spire-ui extract-art --game-dir "D:/Games/Slay the Spire 2" --out public/spire --sizes 32,64
-npx spire-ui extract-art --kinds card --sizes 64,256  # card art plus each card's stats and text
+npx spire-ui extract-art --kinds card --sizes 64,128,256,512  # card art (up to 512px) plus each card's stats and text
 ```
 
 | Option | Default | |
 |---|---|---|
 | `--game-dir <dir>` | Steam's usual folders | Folder holding `Slay the Spire 2.pck` (on macOS the game folder or `SlayTheSpire2.app/Contents/Resources`). Without it the CLI looks in Steam's default library on macOS, Windows and Linux, plus every library listed in Steam's `libraryfolders.vdf`. |
 | `--out <dir>` | `./public/spire` | Output folder, replaced as a whole on every run. |
-| `--sizes <list>` | `64` | Icon box sizes in px (up to 4096), e.g. `64,256` for card art. Icons keep their aspect ratio and are never upscaled: an image smaller than the box keeps its own size. |
+| `--sizes <list>` | `64,128,256` | Icon box sizes in px (up to 4096, at most 16 sizes), e.g. `64,128,256,512` for card art. Each icon is written once per size so browsers can pick one by rendered size and pixel density ([responsive sizes](#responsive-sizes)). Icons keep their aspect ratio and are never upscaled: sizes past an image's own size are skipped, and the first of them is written at the image's own size, so every icon has at least one file. |
 | `--kinds <list>` | `relic,potion,class,room,ui` | Add `card` for card portraits plus [card stats](#card-stats) (off by default: no v1 component needs them). |
 | `--fonts` | off | Also copy the game's fonts. |
 
@@ -33,18 +33,35 @@ in the way), `1` anything unexpected. Errors are one line on stderr.
 
 ```
 <out>/manifest.json
-<out>/<kind>/<slug>@<size>.webp     e.g. relic/ring_of_the_snake@64.webp
+<out>/<kind>/<slug>@<width>.webp    e.g. relic/ring_of_the_snake@64.webp (named by actual pixel width)
 <out>/fonts/<name>.ttf              only with --fonts
 <out>/.spire-ui-art                 marker: this folder is spire-ui output
 ```
 
 `manifest.json` follows the `SpireManifest` schema (version 1) that Spire UI's `<SpireAssets>`
-reads. Each item's `file` (relative to the manifest) is the **largest** requested size, and `w`/`h`
-are that file's pixel size. Two top-level fields are additions the resolver ignores:
+reads. Each item's `file` (relative to the manifest) is its **largest** file, `w`/`h` are that
+file's pixel size, and `widths` lists the pixel widths of all its files, ascending (the last is
+`w`). Two top-level fields are additions the resolver ignores:
 
 - `generator: "spire-ui"`: marks the manifest as written by this CLI (see below).
-- `sizes`: every icon exists at each listed size at the same path with `@<size>` changed, so
-  `relic/anchor@64.webp` has a `relic/anchor@32.webp` sibling when you pass `--sizes 32,64`.
+- `sizes`: the box sizes the run was asked for. Which files an item has is its `widths`.
+
+#### Responsive sizes
+
+Every file is named by its actual pixel width, so an item's siblings are `file` with `@<width>`
+changed for each entry of `widths`. A 300x200 relic extracted with `--sizes 64,128,256,512` gets
+`relic/x@64.webp`, `relic/x@128.webp`, `relic/x@256.webp` and `relic/x@300.webp` (512 would
+upscale it, so the image is written once at its own 300px and 512 is skipped); a 40x48 potion gets
+only `@40` (box 64 is its own size). A tall image's widths are smaller than the boxes: a 150x200
+icon at box 64 is `@48`.
+
+Spire UI's resolver turns `widths` into an `<img srcset>` (`relic/x@64.webp 64w, ...`) with `file`
+as the `src` fallback, and `SpireIcon` sets `sizes` to its own CSS size (override it with a
+`sizes` prop for fluid layouts), so a 32px icon loads the 64px file on a 2x screen and the
+smallest one otherwise. Manifests written before `widths` existed have none; their items use
+`file` only, as before. Components copied in before this change also use `file` only, which is now
+the largest size, so update them (`shadcn add` the `spire-icon` item again) when you re-extract
+with several sizes.
 
 `gameVersion` comes from the `release_info.json` Steam installs beside the pack (or one inside the
 pack, if a future build moves it there), else `unknown`.
@@ -99,7 +116,7 @@ as plain text (markup removed; energy and star icons written as `2 Energy`, `1 S
 only exist in combat shown as `X`). The item's own `description` is unchanged (numbers as `X`).
 
 Stats ride on the card items, so a card needs its art to appear in the manifest; there is no
-stats-only mode (pass a small `--sizes` if you only want the stats). If `sts2.dll` is missing,
+stats-only mode (pass a single small `--sizes` if you only want the stats). If `sts2.dll` is missing,
 unreadable or from a build whose card model this version does not recognise, the run warns and
 writes the card art without stats.
 

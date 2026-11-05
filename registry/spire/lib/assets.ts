@@ -17,6 +17,11 @@ export interface CardStats {
 }
 export interface ManifestItem {
   kind: AssetKind; file: string; w: number; h: number; name?: string; description?: string;
+  /**
+   * Pixel widths of every file for this item, ascending; each lives at `file` with `@<width>` in
+   * place of the last one (the largest, which is `file`). Absent in manifests written before it existed.
+   */
+  widths?: number[];
   card?: CardStats;
 }
 export interface SpireManifest {
@@ -25,7 +30,14 @@ export interface SpireManifest {
   fonts?: { display?: string; body?: string };
 }
 export type Resolved =
-  | { source: "extracted"; src: string; name: string; description?: string; w: number; h: number; card?: CardStats }
+  | {
+      source: "extracted";
+      /** The largest file: the fallback for browsers without srcset, and what `w`/`h` describe. */
+      src: string;
+      /** Every size as `<url> <width>w`, ascending, when the manifest lists `widths`. */
+      srcSet?: string;
+      name: string; description?: string; w: number; h: number; card?: CardStats;
+    }
   | { source: "fallback"; fallback: FallbackKey; name: string };
 
 const PREFIX_KINDS = new Map<string, AssetKind>([
@@ -52,12 +64,30 @@ export function tidyId(id: string): string {
     .join(" ");
 }
 
+/** Most entries `widths` may have (the CLI writes at most this many sizes). */
+export const MAX_WIDTHS = 16;
+const SIZED_FILE = /@(\d+)\.webp$/;
+
+/** `widths` if it is 1 to MAX_WIDTHS ascending positive integers ending at the item's own width and file name; else undefined. */
+function parseWidths(v: unknown, file: string, w: number): number[] | undefined {
+  if (!Array.isArray(v) || v.length === 0 || v.length > MAX_WIDTHS) return undefined;
+  if (!v.every((n, i) => Number.isSafeInteger(n) && n > 0 && (i === 0 || n > v[i - 1]))) return undefined;
+  const largest = v[v.length - 1] as number;
+  return largest === w && SIZED_FILE.exec(file)?.[1] === String(largest) ? [...(v as number[])] : undefined;
+}
+
 export function resolveAsset(id: string, manifest: SpireManifest | null, base: string): Resolved {
   const item = manifest && Object.hasOwn(manifest.items, id) ? manifest.items[id] : undefined;
   if (!item) return { source: "fallback", fallback: fallbackKeyFor(id), name: tidyId(id) };
+  const url = (file: string) => `${base.replace(/\/+$/, "")}/${file.replace(/^\/+/, "")}`;
+  const src = url(item.file);
+  // A manifest passed in directly skips parseManifest, so check `widths` here too. srcset splits
+  // candidates on whitespace, so a URL containing any gets only `src`.
+  const widths = /\s/.test(src) ? undefined : parseWidths(item.widths, item.file, item.w);
   return {
     source: "extracted",
-    src: `${base.replace(/\/+$/, "")}/${item.file.replace(/^\/+/, "")}`,
+    src,
+    ...(widths ? { srcSet: widths.map((width) => `${url(item.file.replace(SIZED_FILE, `@${width}.webp`))} ${width}w`).join(", ") } : {}),
     name: item.name ?? tidyId(id),
     description: item.description,
     w: item.w,
@@ -108,6 +138,9 @@ export function parseManifest(json: unknown): SpireManifest | null {
     const clean = { ...item } as unknown as ManifestItem;
     if (typeof item.name !== "string") delete clean.name;
     if (typeof item.description !== "string") delete clean.description;
+    const widths = parseWidths(item.widths, item.file, item.w);
+    if (widths) clean.widths = widths;
+    else delete clean.widths; // missing or malformed: only `file` is used
     const card = item.card === undefined ? null : parseCardStats(item.card);
     if (card) clean.card = card;
     else delete clean.card;

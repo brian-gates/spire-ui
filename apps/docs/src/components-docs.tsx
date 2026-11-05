@@ -54,7 +54,7 @@ export function RunRowDemo() {
 export const COMPONENTS: ComponentDoc[] = [
   {
     slug: "icon", name: "SpireIcon", summary: "Any game object by id: the extracted icon when the manifest has it, an original fallback glyph when not.",
-    usage: `<SpireIcon id="RELIC.ANCHOR" size={40} />\n<SpireIcon id="STAT.GOLD" tint="currentColor" />`,
+    usage: `<SpireIcon id="RELIC.ANCHOR" size={40} />\n<SpireIcon id="STAT.GOLD" tint="currentColor" />\n// Art drawn at a fluid CSS size: tell the browser which srcset file fits.\n<SpireIcon id="CARD.STRIKE" size={56} sizes="(max-width: 480px) 90vw, 320px" className="w-full h-auto" />`,
     Demo: () => (
       <div className="flex flex-wrap items-center gap-4">
         <SpireIcon id="RELIC.ANCHOR" size={40} />

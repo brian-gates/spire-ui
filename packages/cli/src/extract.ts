@@ -32,6 +32,26 @@ export class ExtractError extends Error {
 
 export const DEFAULT_KINDS: readonly AssetKind[] = ["relic", "potion", "class", "room", "ui"];
 export const MAX_SIZE = 4096;
+/** Default box sizes: 1x to 4x of a 64px-or-smaller icon, so browsers pick by pixel density. */
+export const DEFAULT_SIZES: readonly number[] = [64, 128, 256];
+/** Most sizes one run writes per icon; the resolver ignores a longer `widths` list. */
+export const MAX_SIZES = 16;
+
+/**
+ * The box sizes to render for a source of `w` x `h`, from the sorted, de-duplicated `sizes`.
+ * Never upscales: boxes smaller than the source's longer side are kept, and the first box that
+ * would reach or pass it is rendered once at the source's own size; larger boxes are skipped.
+ * Always at least one.
+ */
+export function plannedBoxes(sizes: readonly number[], w: number, h: number): number[] {
+  const native = Math.max(w, h);
+  const out: number[] = [];
+  for (const s of sizes) {
+    out.push(s);
+    if (s >= native) break;
+  }
+  return out;
+}
 
 // --- id -> texture mapping -------------------------------------------------------------------
 
@@ -259,9 +279,10 @@ export async function mapIds(index: PckIndex, read: (e: PckEntry) => Promise<Buf
 // --- output ----------------------------------------------------------------------------------
 
 /** Output path for one icon, built only from validated parts and confined to `root`. */
-function iconPath(root: string, kind: AssetKind, slug: string, size: number): string {
-  if (!ASSET_KINDS.includes(kind) || !SLUG.test(slug) || !Number.isInteger(size)) throw new Error(`refusing output name ${kind}/${slug}@${size}`);
-  return confined(root, `${kind}/${slug}@${size}.webp`);
+/** Relative file name for one icon: `<kind>/<slug>@<width>.webp`, named by its actual pixel width. */
+function iconFile(kind: AssetKind, slug: string, width: number): string {
+  if (!ASSET_KINDS.includes(kind) || !SLUG.test(slug) || !Number.isInteger(width) || width < 1) throw new Error(`refusing output name ${kind}/${slug}@${width}`);
+  return `${kind}/${slug}@${width}.webp`;
 }
 
 function confined(root: string, rel: string): string {
@@ -354,7 +375,10 @@ export interface ExtractOptions {
    */
   assembly?: string | null;
   out: string;
-  /** Box sizes in pixels; the largest is the manifest's `file`. */
+  /**
+   * Box sizes in pixels. Each icon is written once per size that does not upscale it (see
+   * plannedBoxes), named by its actual width; the item's `widths` lists them and `file` is the largest.
+   */
   sizes: number[];
   kinds: readonly AssetKind[];
   fonts: boolean;
@@ -400,8 +424,9 @@ function loadCardFacts(file: string | null, warn?: (message: string) => void): M
 
 export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
   const sizes = [...new Set(o.sizes)].sort((a, b) => a - b);
-  if (sizes.length === 0 || !sizes.every((s) => Number.isInteger(s) && s >= 1 && s <= MAX_SIZE)) throw new RangeError(`sizes must be integers from 1 to ${MAX_SIZE}`);
-  const largest = sizes[sizes.length - 1]!;
+  if (sizes.length === 0 || sizes.length > MAX_SIZES || !sizes.every((s) => Number.isInteger(s) && s >= 1 && s <= MAX_SIZE)) {
+    throw new RangeError(`sizes must be 1 to ${MAX_SIZES} integers from 1 to ${MAX_SIZE}`);
+  }
   const out = path.resolve(o.out);
 
   const index = await readPckIndex(o.pck);
@@ -450,33 +475,39 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
       for (const [id, m] of ids) {
         const r = m.texture!.region;
         if (r && (r.x + r.w > w || r.y + r.h > h)) throw new ExtractError("corrupt", `${id}: sprite region lies outside its ${w}x${h} atlas`);
-        for (const size of sizes) {
+        const sw = r ? r.w : w;
+        const sh = r ? r.h : h;
+        // Rendered per box, keyed by actual width: two boxes that round to the same width keep the larger.
+        const byWidth = new Map<number, { data: Buffer; width: number; height: number }>();
+        for (const box of plannedBoxes(sizes, sw, sh)) {
           let img = source();
           if (r) img = img.extract({ left: r.x, top: r.y, width: r.w, height: r.h });
           const { data, info } = await img
-            .resize({ width: size, height: size, fit: "inside", withoutEnlargement: true })
+            .resize({ width: box, height: box, fit: "inside", withoutEnlargement: true })
             .webp({ quality: 82, alphaQuality: 90, effort: 5 })
             .toBuffer({ resolveWithObject: true });
-          write(iconPath(staging, m.kind, m.slug, size), data);
-          if (size === largest) {
-            const facts = m.kind === "card" ? cardFacts?.get(id) : undefined;
-            const card = facts ? toCardStats(facts, m.template) : undefined;
-            if (card) {
-              cardStats++;
-              if (card.unknown) withUnknown.push(id);
-            }
-            items[id] = {
-              kind: m.kind,
-              file: `${m.kind}/${m.slug}@${size}.webp`,
-              w: info.width,
-              h: info.height,
-              ...(m.name ? { name: m.name } : {}),
-              ...(m.description ? { description: m.description } : {}),
-              ...(card ? { card } : {}),
-            };
-            counts[m.kind]++;
-          }
+          byWidth.set(info.width, { data, width: info.width, height: info.height });
         }
+        const outputs = [...byWidth.values()].sort((a, b) => a.width - b.width);
+        for (const o of outputs) write(confined(staging, iconFile(m.kind, m.slug, o.width)), o.data);
+        const top = outputs[outputs.length - 1]!;
+        const facts = m.kind === "card" ? cardFacts?.get(id) : undefined;
+        const card = facts ? toCardStats(facts, m.template) : undefined;
+        if (card) {
+          cardStats++;
+          if (card.unknown) withUnknown.push(id);
+        }
+        items[id] = {
+          kind: m.kind,
+          file: iconFile(m.kind, m.slug, top.width),
+          w: top.width,
+          h: top.height,
+          widths: outputs.map((o) => o.width),
+          ...(m.name ? { name: m.name } : {}),
+          ...(m.description ? { description: m.description } : {}),
+          ...(card ? { card } : {}),
+        };
+        counts[m.kind]++;
       }
     });
 
@@ -501,8 +532,8 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
     }
 
     const sortedItems = Object.fromEntries(Object.entries(items).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
-    // `sizes` is an extension to the schema: every item also exists at each listed size, at the
-    // same path with `@<size>` in place of the largest size.
+    // `sizes` is an extension to the schema: the box sizes this run was asked for. Which files each
+    // item actually has is its `widths` (small sources skip boxes that would upscale them).
     const manifest: SpireManifest & { generator: string; sizes: number[] } = {
       schemaVersion: 1,
       generator: GENERATOR,

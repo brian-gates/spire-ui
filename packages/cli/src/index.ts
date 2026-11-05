@@ -5,7 +5,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { parseArgs } from "node:util";
 import { CtexError } from "./ctex";
-import { activeStaging, DEFAULT_KINDS, extract, ExtractError, MAX_SIZE } from "./extract";
+import { activeStaging, DEFAULT_KINDS, DEFAULT_SIZES, extract, ExtractError, MAX_SIZE, MAX_SIZES } from "./extract";
 import { defaultGameDirs, findPck, PCK_NAME } from "./game-paths";
 import { ResourceError } from "./godot";
 import { ASSET_KINDS, type AssetKind } from "./manifest";
@@ -18,7 +18,8 @@ app serves, with a manifest.json for Spire UI's <SpireAssets>. Nothing is downlo
 
   --game-dir <dir>   folder with "${PCK_NAME}" (default: Steam's usual install folders)
   --out <dir>        output folder, replaced on each run (default: ./public/spire)
-  --sizes <list>     icon box sizes in px, e.g. 64,256; never upscaled (default: 64)
+  --sizes <list>     icon box sizes in px for responsive srcset, e.g. 64,128,256,512; a size
+                     that would upscale an icon is skipped (default: ${DEFAULT_SIZES.join(",")})
   --kinds <list>     any of ${ASSET_KINDS.join(",")} (default: ${DEFAULT_KINDS.join(",")});
                      card also reads card stats and text from the game's code (sts2.dll)
   --fonts            also copy the game's fonts (for local use only)
@@ -33,6 +34,7 @@ function list(value: string): string[] {
 function parseSizes(value: string): number[] {
   const sizes = list(value).map((s) => (/^\d+$/.test(s) ? Number(s) : NaN));
   if (sizes.length === 0 || sizes.some((n) => !Number.isInteger(n) || n < 1 || n > MAX_SIZE)) throw new UsageError(`--sizes must be whole numbers from 1 to ${MAX_SIZE}, e.g. 32,64`);
+  if (new Set(sizes).size > MAX_SIZES) throw new UsageError(`--sizes takes at most ${MAX_SIZES} different sizes`);
   return sizes;
 }
 
@@ -67,7 +69,7 @@ async function main(argv: string[]): Promise<number> {
       options: {
         "game-dir": { type: "string" },
         out: { type: "string", default: "./public/spire" },
-        sizes: { type: "string", default: "64" },
+        sizes: { type: "string", default: DEFAULT_SIZES.join(",") },
         kinds: { type: "string", default: DEFAULT_KINDS.join(",") },
         fonts: { type: "boolean", default: false },
         help: { type: "boolean", short: "h", default: false },

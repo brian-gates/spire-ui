@@ -13,6 +13,7 @@ const manifest: SpireManifest = {
   items: {
     "RELIC.A": { kind: "relic", file: "relics/a.png", w: 64, h: 64, name: "Alpha" },
     "RELIC.B": { kind: "relic", file: "relics/b.png", w: 64, h: 64, name: "Beta" },
+    "RELIC.C": { kind: "relic", file: "relic/c@256.webp", w: 256, h: 256, widths: [64, 128, 256], name: "Gamma" },
   },
 };
 const wrap = (ui: React.ReactNode) => render(<SpireAssets base="/art" manifest={manifest}>{ui}</SpireAssets>);
@@ -26,6 +27,35 @@ describe("SpireIcon", () => {
     expect(img.getAttribute("width")).toBe("32");
     expect(img.getAttribute("height")).toBe("32");
     expect(img.getAttribute("loading")).toBe("lazy");
+  });
+
+  it("renders srcSet with sizes defaulting to its CSS size, keeping src as the largest", () => {
+    const { container } = wrap(<SpireIcon id="RELIC.C" size={24} />);
+    const img = container.querySelector("img")!;
+    expect(img.getAttribute("src")).toBe("/art/relic/c@256.webp");
+    expect(img.getAttribute("srcset")).toBe("/art/relic/c@64.webp 64w, /art/relic/c@128.webp 128w, /art/relic/c@256.webp 256w");
+    expect(img.getAttribute("sizes")).toBe("24px");
+    expect(img.getAttribute("width")).toBe("24");
+    expect(img.getAttribute("loading")).toBe("lazy");
+  });
+
+  it("takes a sizes override for fluid layouts", () => {
+    const { container } = wrap(<SpireIcon id="RELIC.C" size={56} sizes="(max-width: 480px) 90vw, 320px" />);
+    expect(container.querySelector("img")!.getAttribute("sizes")).toBe("(max-width: 480px) 90vw, 320px");
+  });
+
+  it("omits srcset and sizes for items without widths", () => {
+    const { container } = wrap(<SpireIcon id="RELIC.A" sizes="50vw" />);
+    const img = container.querySelector("img")!;
+    expect(img.hasAttribute("srcset")).toBe(false);
+    expect(img.hasAttribute("sizes")).toBe(false);
+  });
+
+  it("falls back on error when it has a srcSet", () => {
+    const { container } = wrap(<SpireIcon id="RELIC.C" />);
+    fireEvent.error(container.querySelector("img")!);
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("svg title")!.textContent).toBe("Gamma");
   });
 
   it("honours size", () => {

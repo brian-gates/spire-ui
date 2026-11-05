@@ -107,6 +107,7 @@ describe("spire-ui extract-art", () => {
     expect(run("extract-art", "--kinds", "relic,hats").code).toBe(2);
     expect(run("extract-art", "--sizes", "0").code).toBe(2);
     expect(run("extract-art", "--sizes", "64,abc").code).toBe(2);
+    expect(run("extract-art", "--sizes", Array.from({ length: 17 }, (_, i) => i + 1).join(",")).code).toBe(2);
     expect(run("extract-art", "--nope").code).toBe(2);
     expect(run("dance").code).toBe(2);
   });

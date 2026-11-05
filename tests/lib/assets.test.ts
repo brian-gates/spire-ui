@@ -128,3 +128,62 @@ describe("parseManifest", () => {
     expect(parseManifest({ ...manifest, items: { "RELIC.A": { kind: "relic", w: 1, h: 1 } } })).toBeNull();
   });
 });
+
+describe("responsive widths", () => {
+  const sized = (widths: unknown, extra: Record<string, unknown> = {}) => ({
+    schemaVersion: 1, gameVersion: "1", generatedAt: "now",
+    items: { "RELIC.R": { kind: "relic", file: "relic/r@256.webp", w: 256, h: 240, widths, ...extra } },
+  });
+
+  it("keeps valid widths and builds an ascending srcSet with src as the largest", () => {
+    const m = parseManifest(sized([64, 128, 256]))!;
+    expect(m.items["RELIC.R"]!.widths).toEqual([64, 128, 256]);
+    expect(resolveAsset("RELIC.R", m, "/spire/")).toMatchObject({
+      source: "extracted",
+      src: "/spire/relic/r@256.webp",
+      srcSet: "/spire/relic/r@64.webp 64w, /spire/relic/r@128.webp 128w, /spire/relic/r@256.webp 256w",
+      w: 256,
+      h: 240,
+    });
+  });
+
+  it("drops malformed widths but keeps the item on its file", () => {
+    const bad: unknown[] = [
+      "64,256", [], [0, 256], [-64, 256], [64.5, 256], [128, 64, 256], [64, 64, 256], ["64", 256],
+      [64, 128], // does not end at w
+      Array.from({ length: 17 }, (_, i) => i + 240), // too many
+    ];
+    for (const widths of bad) {
+      const m = parseManifest(sized(widths))!;
+      expect(m, JSON.stringify(widths)).not.toBeNull();
+      expect(m.items["RELIC.R"]!.widths, JSON.stringify(widths)).toBeUndefined();
+      const r = resolveAsset("RELIC.R", m, "/spire");
+      expect(r).toMatchObject({ source: "extracted", src: "/spire/relic/r@256.webp" });
+      expect(r).not.toHaveProperty("srcSet");
+    }
+    // The file name must carry the largest width for siblings to be derivable.
+    expect(parseManifest(sized([64, 256], { file: "relic/r.webp" }))!.items["RELIC.R"]!.widths).toBeUndefined();
+  });
+
+  it("accepts the maximum count and a single width", () => {
+    const many = Array.from({ length: 16 }, (_, i) => 241 + i);
+    expect(parseManifest(sized(many, { w: 256 }))!.items["RELIC.R"]!.widths).toEqual(many);
+    const one = parseManifest(sized([256]))!;
+    expect(resolveAsset("RELIC.R", one, "")).toMatchObject({ src: "/relic/r@256.webp", srcSet: "/relic/r@256.webp 256w" });
+  });
+
+  it("old manifests without widths resolve to src only", () => {
+    const m = parseManifest({ schemaVersion: 1, gameVersion: "1", generatedAt: "now", sizes: [64, 256], items: { "RELIC.R": { kind: "relic", file: "relic/r@256.webp", w: 256, h: 256 } } })!;
+    expect(m.items["RELIC.R"]).not.toHaveProperty("widths");
+    const r = resolveAsset("RELIC.R", m, "/spire");
+    expect(r).toMatchObject({ src: "/spire/relic/r@256.webp" });
+    expect(r).not.toHaveProperty("srcSet");
+  });
+
+  it("checks widths on a manifest passed in without parsing, and skips srcSet for URLs with spaces", () => {
+    const raw = sized([256, 64]) as unknown as SpireManifest;
+    expect(resolveAsset("RELIC.R", raw, "/spire")).not.toHaveProperty("srcSet");
+    const ok = sized([64, 256]) as unknown as SpireManifest;
+    expect(resolveAsset("RELIC.R", ok, "/my art")).not.toHaveProperty("srcSet");
+  });
+});

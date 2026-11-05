@@ -3,8 +3,13 @@ import { FallbackIcon, fallbackKeyFor } from "../icons/fallback";
 import { cn } from "../lib/cn";
 import { useSpireAsset } from "../lib/assets-provider";
 
-export function SpireIcon(props: { id: string; size?: number; tint?: string; className?: string }) {
-  const { id, size = 32, tint, className } = props;
+/**
+ * A game icon from the asset manifest, or its fallback glyph. With several extracted sizes the
+ * browser picks one for the rendered size and pixel density: `sizes` defaults to `${size}px`;
+ * pass your own (e.g. "(max-width: 480px) 90vw, 320px") when CSS draws the icon at another size.
+ */
+export function SpireIcon(props: { id: string; size?: number; sizes?: string; tint?: string; className?: string }) {
+  const { id, size = 32, sizes, tint, className } = props;
   const asset = useSpireAsset(id);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
@@ -12,12 +17,14 @@ export function SpireIcon(props: { id: string; size?: number; tint?: string; cla
 
   if (asset.source === "extracted" && failedSrc !== asset.src) {
     return (
+      // loading, sizes and srcSet come before src: browsers may start a fetch as soon as src is set.
       <img
-        src={asset.src}
-        alt={asset.name}
+        loading="lazy"
         width={size}
         height={size}
-        loading="lazy"
+        {...(asset.srcSet ? { sizes: sizes ?? `${size}px`, srcSet: asset.srcSet } : {})}
+        src={asset.src}
+        alt={asset.name}
         className={cn(className)}
         onError={() => setFailedSrc(asset.src)}
       />

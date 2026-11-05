@@ -18,6 +18,11 @@ export interface CardStats {
 }
 export interface ManifestItem {
   kind: AssetKind; file: string; w: number; h: number; name?: string; description?: string;
+  /**
+   * Pixel widths of every file for this item, ascending; each lives at `file` with `@<width>` in
+   * place of the last one (the largest, which is `file`). Absent in manifests written before it existed.
+   */
+  widths?: number[];
   card?: CardStats;
 }
 export interface SpireManifest {

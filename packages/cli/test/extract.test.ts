@@ -6,7 +6,7 @@ import sharp from "sharp";
 import { afterAll, describe, expect, test } from "vitest";
 import { parseManifest, resolveAsset } from "../../../registry/spire/lib/assets";
 import { CtexError } from "../src/ctex";
-import { ExtractError, extract, mapIds } from "../src/extract";
+import { ExtractError, extract, mapIds, plannedBoxes } from "../src/extract";
 import { embeddedSfnt, plainText, unwrapRscc } from "../src/godot";
 import { readPckFile, readPckIndex } from "../src/pck";
 import { atlasTres, buildPck, fakeSfnt, type FakeFile, importFile, pngCtex, rscc, solidPng, zstdStored } from "./fixtures";
@@ -83,14 +83,16 @@ describe("extract", () => {
     expect(fs.statSync(out).mode & 0o777).toBe(0o755);
   });
 
-  test("writes every mapped icon at each size and a manifest the resolver accepts", async () => {
+  test("writes every mapped icon at each size, named by width, and a manifest the resolver accepts", async () => {
     const game = await fakeGame();
     const out = outDir("ok");
     const summary = await extract({ pck: path.join(game, PCK_NAME), out, sizes: [32, 64], kinds: [...DEFAULT_KINDS], fonts: false });
 
-    for (const f of ["relic/anchor", "relic/ring_of_the_snake", "potion/fire_potion"]) {
+    for (const f of ["relic/anchor", "relic/ring_of_the_snake"]) {
       for (const size of [32, 64]) expect(fs.existsSync(path.join(out, `${f}@${size}.webp`)), `${f}@${size}`).toBe(true);
     }
+    // The 40x48 potion: box 32 is 27 wide; box 64 would upscale it, so it is written once at its own 40.
+    expect(fs.readdirSync(path.join(out, "potion")).sort()).toEqual(["fire_potion@27.webp", "fire_potion@40.webp"]);
     const manifest = parseManifest(JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8")));
     expect(manifest).not.toBeNull();
     expect(manifest!.schemaVersion).toBe(1);
@@ -101,19 +103,28 @@ describe("extract", () => {
       file: "relic/anchor@64.webp",
       w: 64,
       h: 64,
+      widths: [32, 64],
       name: "Tin Anchor",
       description: "Start each combat with X Block.",
     });
-    expect(manifest!.items["RELIC.RING_OF_THE_SNAKE"]).toMatchObject({ kind: "relic", file: "relic/ring_of_the_snake@64.webp", w: 64, h: 55, name: "Ring of the Snake", description: "Draw X additional cards." });
+    expect(manifest!.items["RELIC.RING_OF_THE_SNAKE"]).toMatchObject({ kind: "relic", file: "relic/ring_of_the_snake@64.webp", w: 64, h: 55, widths: [32, 64], name: "Ring of the Snake", description: "Draw X additional cards." });
     // No localization for potions: the id comes from the texture name, and the image is never upscaled.
-    expect(manifest!.items["POTION.FIRE_POTION"]).toEqual({ kind: "potion", file: "potion/fire_potion@64.webp", w: 40, h: 48 });
+    expect(manifest!.items["POTION.FIRE_POTION"]).toEqual({ kind: "potion", file: "potion/fire_potion@40.webp", w: 40, h: 48, widths: [27, 40] });
     expect(manifest!.fonts).toBeUndefined();
     expect(JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8")).sizes).toEqual([32, 64]);
 
-    // w/h describe the file they sit beside.
+    // w/h describe the file they sit beside, and every srcSet entry is a real file of that width.
     for (const item of Object.values(manifest!.items)) {
       const meta = await sharp(path.join(out, item.file)).metadata();
       expect([meta.format, meta.width, meta.height]).toEqual(["webp", item.w, item.h]);
+    }
+    for (const id of Object.keys(manifest!.items)) {
+      const r = resolveAsset(id, manifest, "");
+      if (r.source !== "extracted" || !r.srcSet) throw new Error(`${id} has no srcSet`);
+      for (const candidate of r.srcSet.split(", ")) {
+        const [url, w] = candidate.split(" ");
+        expect((await sharp(path.join(out, url!)).metadata()).width, candidate).toBe(Number(w!.slice(0, -1)));
+      }
     }
     const small = await sharp(path.join(out, "relic/ring_of_the_snake@32.webp")).metadata();
     expect([small.width, small.height]).toEqual([32, 27]);
@@ -126,6 +137,31 @@ describe("extract", () => {
     expect(summary.unmapped).toContain("RELIC.MISSING_RELIC");
     expect(summary.gameVersion).toBe("v9.9.9");
     expect(siblings(out)).toEqual([]);
+  });
+
+  test("never upscales: sizes past a source's own size are skipped, and the first one is written at its own size", async () => {
+    const game = await fakeGame();
+    const out = outDir("sizes");
+    await extract({ pck: path.join(game, PCK_NAME), out, sizes: [512, 64, 128, 256, 64], kinds: [...DEFAULT_KINDS], fonts: false });
+    const raw = JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8"));
+    expect(raw.sizes).toEqual([64, 128, 256, 512]);
+    // anchor 80x80, ring 70x60 (atlas sprite), potion 40x48: one downscale at most, then native.
+    expect(raw.items["RELIC.ANCHOR"]).toMatchObject({ file: "relic/anchor@80.webp", w: 80, h: 80, widths: [64, 80] });
+    expect(raw.items["RELIC.RING_OF_THE_SNAKE"]).toMatchObject({ file: "relic/ring_of_the_snake@70.webp", w: 70, h: 60, widths: [64, 70] });
+    expect(raw.items["POTION.FIRE_POTION"]).toMatchObject({ file: "potion/fire_potion@40.webp", w: 40, h: 48, widths: [40] });
+    const files = (kind: string) => fs.readdirSync(path.join(out, kind)).sort();
+    expect(files("relic")).toEqual(["anchor@64.webp", "anchor@80.webp", "ring_of_the_snake@64.webp", "ring_of_the_snake@70.webp"]);
+    expect(files("potion")).toEqual(["fire_potion@40.webp"]);
+    // Round trip: the resolver keeps widths and builds a srcSet over exactly these files.
+    const manifest = parseManifest(raw)!;
+    expect(manifest.items["RELIC.ANCHOR"]!.widths).toEqual([64, 80]);
+    expect(resolveAsset("RELIC.ANCHOR", manifest, "/spire")).toMatchObject({ src: "/spire/relic/anchor@80.webp", srcSet: "/spire/relic/anchor@64.webp 64w, /spire/relic/anchor@80.webp 80w" });
+  });
+
+  test("rejects more sizes than a manifest may list", async () => {
+    const game = await fakeGame();
+    const sizes = Array.from({ length: 17 }, (_, i) => i + 1);
+    await expect(extract({ pck: path.join(game, PCK_NAME), out: outDir("toomany"), sizes, kinds: ["relic"], fonts: false })).rejects.toBeInstanceOf(RangeError);
   });
 
   test("hostile pack names never escape the output directory", async () => {
@@ -177,7 +213,7 @@ describe("extract", () => {
     expect(fs.existsSync(path.join(out, "relic"))).toBe(false);
     const manifest = parseManifest(JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8")))!;
     expect(Object.keys(manifest.items)).toEqual(["POTION.FIRE_POTION"]);
-    expect(manifest.items["POTION.FIRE_POTION"]!.file).toBe("potion/fire_potion@48.webp");
+    expect(manifest.items["POTION.FIRE_POTION"]!.file).toBe("potion/fire_potion@40.webp");
     expect(manifest.generatedAt).not.toBe(before);
     expect(siblings(out)).toEqual([]);
 
@@ -273,6 +309,17 @@ describe("extract", () => {
     const err = await extract({ pck: path.join(dir, PCK_NAME), out: outDir("godot3"), sizes: [32], kinds: ["relic"], fonts: false }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ExtractError);
     expect((err as ExtractError).code).toBe("unsupported-game");
+  });
+});
+
+describe("plannedBoxes", () => {
+  test("keeps boxes below the source's longer side, then one at or past it, never more", () => {
+    expect(plannedBoxes([64, 128, 256, 512], 1000, 760)).toEqual([64, 128, 256, 512]);
+    expect(plannedBoxes([64, 128, 256, 512], 200, 150)).toEqual([64, 128, 256]);
+    expect(plannedBoxes([64, 128, 256, 512], 150, 200)).toEqual([64, 128, 256]);
+    expect(plannedBoxes([64, 128, 256, 512], 256, 256)).toEqual([64, 128, 256]);
+    expect(plannedBoxes([64, 128, 256, 512], 40, 30)).toEqual([64]);
+    expect(plannedBoxes([64], 4000, 4000)).toEqual([64]);
   });
 });
 
@@ -401,6 +448,7 @@ describe("card stats", () => {
       file: "card/hammer_test@256.webp",
       w: 256,
       h: 195,
+      widths: [64, 256],
       name: "Test Hammer",
       description: "Bonk for X.",
       card: {
@@ -416,7 +464,7 @@ describe("card stats", () => {
       },
     });
     // An atlas sprite smaller than the requested size keeps its own size: never upscaled.
-    expect(raw.items["CARD.SPARK_TEST"]).toMatchObject({ file: "card/spark_test@256.webp", w: 100, h: 80, card: { description: "Toss 3 sparks at the moon.", upgradedDescription: "Toss 4 sparks at the moon." } });
+    expect(raw.items["CARD.SPARK_TEST"]).toMatchObject({ file: "card/spark_test@100.webp", w: 100, h: 80, widths: [64, 100], card: { description: "Toss 3 sparks at the moon.", upgradedDescription: "Toss 4 sparks at the moon." } });
     const small = await sharp(path.join(out, "card/hammer_test@64.webp")).metadata();
     expect([small.width, small.height]).toEqual([64, 49]);
 
