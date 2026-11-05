@@ -22,7 +22,7 @@ export interface RunView {
 export function RunRow(props: { run: RunView; actions?: ReactNode }) {
   const { run, actions } = props;
   return (
-    <article data-slot="run-row" data-ended={run.ended ? "true" : undefined} className="@container min-w-0">
+    <article data-slot="run-row" data-ended={run.ended ? "true" : undefined} className="@container w-full min-w-0">
       <Panel className={cn("grid gap-3 p-3", run.ended && "opacity-80")}>
         <RunHeader run={run} actions={actions} />
         <ul aria-label="Players" className="m-0 grid list-none gap-3 border-t border-spire-panel-edge/60 p-0 pt-3">

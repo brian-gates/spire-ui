@@ -21,7 +21,8 @@ const meta = {
   title: "Game/RunRow",
   component: RunRow,
   args: { run: base },
-  decorators: [(Story) => <div className="max-w-5xl p-6"><Story /></div>],
+  parameters: { layout: "padded" },
+  decorators: [(Story) => <div className="w-full max-w-5xl"><Story /></div>],
 } satisfies Meta<typeof RunRow>;
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -45,3 +46,7 @@ export const FortyRelics: Story = {
 export const LongName: Story = {
   args: { run: { ...base, players: [{ ...ironclad, name: "Wolfeschlegelsteinhausen-Bergerd" }] } },
 };
+
+const narrow = [(Story: () => React.JSX.Element) => <div className="w-[360px]"><Story /></div>];
+export const FortyRelicsNarrow: Story = { ...FortyRelics, decorators: narrow };
+export const LongNameNarrow: Story = { ...LongName, decorators: narrow };

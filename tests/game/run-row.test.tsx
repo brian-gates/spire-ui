@@ -43,6 +43,28 @@ describe("RunRow", () => {
   });
 });
 
+describe("RunRow edge cases", () => {
+  it("shows No relics for a player without relics", () => {
+    render(<RunRow run={{ ...run, players: [{ ...friend, relics: [] }] }} />);
+    expect(screen.getByText("No relics")).toBeTruthy();
+  });
+  it("keeps potions with gaps and beyond maxPotionSlots", () => {
+    const p: RunPlayerView = {
+      ...friend, maxPotionSlots: 2,
+      potions: [{ id: "POTION.A", slot: 1 }, { id: "POTION.B", slot: 5 }, { id: "POTION.C", slot: 0 }],
+    };
+    const { container } = render(<RunRow run={{ ...run, players: [p] }} />);
+    const slots = container.querySelectorAll("[data-slot=potion-slot]");
+    expect(slots.length).toBe(3);
+    expect(container.querySelectorAll("[data-slot=potion-slot][data-filled=true]").length).toBe(3);
+  });
+  it("renders a gap in the belt as an empty slot", () => {
+    const p: RunPlayerView = { ...friend, maxPotionSlots: 3, potions: [{ id: "POTION.A", slot: 2 }] };
+    const { container } = render(<RunRow run={{ ...run, players: [p] }} />);
+    expect(container.querySelectorAll("[data-slot=potion-slot][data-filled=false]").length).toBe(2);
+  });
+});
+
 describe("RunHeader", () => {
   it("shows relative saved time with absolute title, and who saved", () => {
     const savedAt = new Date(Date.now() - 3 * 3600_000);
@@ -78,9 +100,19 @@ describe("PlayerRow", () => {
     expect(within(row).getByRole("list", { name: "Potions" })).toBeTruthy();
     expect(within(row).getByRole("img", { name: "HP: 40/80" })).toBeTruthy();
   });
-  it("wraps loot under name and stats at narrow widths", () => {
+  it("places the loot block after name and stats in document order", () => {
     const { container } = render(<ul><PlayerRow player={you} /></ul>);
-    const loot = container.querySelector("[data-slot=player-loot]") as HTMLElement;
-    expect(loot.className).toMatch(/col-span-full/);
+    const row = container.querySelector("[data-slot=player-row]") as HTMLElement;
+    const loot = row.querySelector("[data-slot=player-loot]") as HTMLElement;
+    const kids = Array.from(row.children);
+    const hp = screen.getByRole("img", { name: "HP: 40/80" });
+    const gold = screen.getByRole("img", { name: "Gold: 123" });
+    expect(kids[kids.length - 1]).toBe(loot);
+    for (const stat of [hp, gold]) {
+      expect(row.contains(stat) && !loot.contains(stat)).toBe(true);
+      expect(stat.compareDocumentPosition(loot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+    expect(loot.querySelector("[aria-label=Relics]")).toBeTruthy();
+    expect(loot.querySelector("[aria-label=Potions]")).toBeTruthy();
   });
 });

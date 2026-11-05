@@ -1,6 +1,6 @@
 /* Spire UI theme: dark slate-teal, no light variant. Fonts: Kreon (display) and
    Spectral (body), both SIL OFL via Google Fonts. Load them in your app. */
-@theme {
+@theme static {
   --color-spire-bg: #0a1115;
   --color-spire-panel: #18262d;
   --color-spire-panel-edge: #3b5560;

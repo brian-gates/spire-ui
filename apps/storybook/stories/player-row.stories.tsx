@@ -10,7 +10,8 @@ const meta = {
       relics: [{ id: "RELIC.BURNING_BLOOD" }, { id: "RELIC.EXAMPLE_RELIC_1" }], potions: [{ id: "POTION.EXAMPLE", slot: 0 }], maxPotionSlots: 3,
     },
   },
-  decorators: [(Story) => <div className="@container max-w-3xl p-6"><ul className="m-0 list-none p-0"><Story /></ul></div>],
+  parameters: { layout: "padded" },
+  decorators: [(Story) => <div className="@container w-full max-w-3xl"><ul className="m-0 list-none p-0"><Story /></ul></div>],
 } satisfies Meta<typeof PlayerRow>;
 export default meta;
 type Story = StoryObj<typeof meta>;

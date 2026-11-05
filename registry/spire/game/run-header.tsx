@@ -34,7 +34,7 @@ export function RunHeader(props: { run: RunHeaderView; actions?: ReactNode }) {
         <span className="text-spire-muted">Act {run.act}</span>
         <span className="text-xl font-bold">Floor {run.floor}</span>
       </span>
-      <span className="inline-flex items-center gap-1 text-spire-gold" title={`Ascension ${run.ascension}`}>
+      <span className="inline-flex items-center gap-1 text-spire-gold">
         <span aria-hidden className="inline-flex"><SpireIcon id="STAT.ASCENSION" size={20} tint="currentColor" /></span>
         <span aria-hidden className="font-bold">A{run.ascension}</span>
         <span className="sr-only">Ascension {run.ascension}</span>
