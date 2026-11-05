@@ -135,6 +135,154 @@
           "target": "~/lib/spire/ui/spire-icon.tsx"
         }
       ]
+    },
+    {
+      "name": "spire-panel",
+      "type": "registry:ui",
+      "title": "Panel",
+      "description": "Themed container with default, inset and parchment variants.",
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/ui/panel.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/ui/panel.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-banner",
+      "type": "registry:ui",
+      "title": "Banner",
+      "description": "Full-width gold, red or blue title banner.",
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/ui/banner.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/ui/banner.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-button",
+      "type": "registry:ui",
+      "title": "Button",
+      "description": "Button with primary, secondary and ghost variants and asChild.",
+      "dependencies": [
+        "radix-ui"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/ui/button.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/ui/button.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-badge",
+      "type": "registry:ui",
+      "title": "Badge",
+      "description": "Pill badge with rarity and neutral tones.",
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/ui/badge.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/ui/badge.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-divider",
+      "type": "registry:ui",
+      "title": "Divider",
+      "description": "Gold fading horizontal rule.",
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/ui/divider.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/ui/divider.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-tooltip",
+      "type": "registry:ui",
+      "title": "Tooltip",
+      "description": "Accessible tooltip that opens on hover and keyboard focus.",
+      "dependencies": [
+        "radix-ui"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/ui/tooltip.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/ui/tooltip.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-tabs",
+      "type": "registry:ui",
+      "title": "Tabs",
+      "description": "Themed tabs.",
+      "dependencies": [
+        "radix-ui"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/ui/tabs.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/ui/tabs.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-dialog",
+      "type": "registry:ui",
+      "title": "Dialog",
+      "description": "Modal dialog with focus trap and Escape to close.",
+      "dependencies": [
+        "radix-ui"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/ui/dialog.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/ui/dialog.tsx"
+        }
+      ]
     }
   ]
 }
