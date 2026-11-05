@@ -94,6 +94,47 @@
           "target": "~/lib/spire/lib/assets-provider.tsx"
         }
       ]
+    },
+    {
+      "name": "spire-icons",
+      "type": "registry:lib",
+      "title": "Spire fallback icons",
+      "description": "Original SVG fallback silhouettes (FallbackIcon) for relics, potions, cards, classes, rooms and stats.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-fallback-keys.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/icons/fallback.tsx",
+          "type": "registry:lib",
+          "target": "~/lib/spire/icons/fallback.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-icon",
+      "type": "registry:ui",
+      "title": "SpireIcon",
+      "description": "Renders locally extracted art by game id, falling back to an SVG silhouette when missing or broken.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-icons.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-assets.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/ui/spire-icon.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/ui/spire-icon.tsx"
+        }
+      ]
     }
   ]
 }
