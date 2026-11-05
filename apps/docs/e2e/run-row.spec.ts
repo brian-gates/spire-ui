@@ -1,5 +1,4 @@
-// Runs in Task 10 against the docs app. Excluded from tsc and vitest until @playwright/test is installed
-// (tsconfig.json "include" and the vitest include globs do not match apps/docs/e2e).
+// Wired up in Task 10: runs against the built docs (`vite preview`), see playwright.config.ts.
 import { expect, test } from "@playwright/test";
 
 test("RunRow with 40 relics stays inside 360px and keeps name and HP on one line", async ({ page }) => {

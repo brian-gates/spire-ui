@@ -1,0 +1,326 @@
+{
+  "schemaVersion": 1,
+  "generator": "spire-ui",
+  "gameVersion": "v0.107.1",
+  "generatedAt": "2026-11-05T04:29:14.844Z",
+  "sizes": [
+    64
+  ],
+  "items": {
+    "CHARACTER.IRONCLAD": {
+      "kind": "class",
+      "file": "class/ironclad@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "The Ironclad",
+      "description": "The last soldier of the Ironclads. Crushes foes with sword and flame against his will."
+    },
+    "CHARACTER.SILENT": {
+      "kind": "class",
+      "file": "class/silent@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "The Silent",
+      "description": "A huntress from outside the Spire. Ready to stab and poison anything in her way."
+    },
+    "CHARACTER.DEFECT": {
+      "kind": "class",
+      "file": "class/defect@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "The Defect",
+      "description": "An automaton eternally modifying itself to survive. Deploys Orb technology when it must fight."
+    },
+    "CHARACTER.REGENT": {
+      "kind": "class",
+      "file": "class/regent@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "The Regent",
+      "description": "Heir to the Throne of Stars. Wields cosmic powers but his minions do the work."
+    },
+    "CHARACTER.NECROBINDER": {
+      "kind": "class",
+      "file": "class/necrobinder@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "The Necrobinder",
+      "description": "A Spireborn lich who seeks revenge. Calls upon her trusty left hand, Osty, in combat."
+    },
+    "ROOM.MONSTER": {
+      "kind": "room",
+      "file": "room/monster@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Enemy",
+      "description": "Hostile enemies reside in these rooms."
+    },
+    "ROOM.ELITE": {
+      "kind": "room",
+      "file": "room/elite@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Elite",
+      "description": "Powerful foes are in these rooms. Defeating them will reward you a Relic."
+    },
+    "ROOM.REST": {
+      "kind": "room",
+      "file": "room/rest@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Rest Site",
+      "description": "Stop by these rooms to Heal some HP or Upgrade a card."
+    },
+    "ROOM.SHOP": {
+      "kind": "room",
+      "file": "room/shop@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Shop",
+      "description": "The mysterious Merchant sells his wares in these rooms. Spend your well-earned Gold here!"
+    },
+    "ROOM.TREASURE": {
+      "kind": "room",
+      "file": "room/treasure@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Treasure Room",
+      "description": "Relics and Gold can be found in these coveted rooms."
+    },
+    "ROOM.EVENT": {
+      "kind": "room",
+      "file": "room/event@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Event",
+      "description": "Something unusual occurs in these rooms..."
+    },
+    "ROOM.UNKNOWN": {
+      "kind": "room",
+      "file": "room/unknown@64.webp",
+      "w": 64,
+      "h": 63,
+      "name": "Unknown",
+      "description": "An unknown room. Encounter an event, enemies, shop, or treasure."
+    },
+    "STAT.HP": {
+      "kind": "ui",
+      "file": "ui/hp@64.webp",
+      "w": 64,
+      "h": 53,
+      "name": "Hit Points (HP)"
+    },
+    "STAT.GOLD": {
+      "kind": "ui",
+      "file": "ui/gold@64.webp",
+      "w": 64,
+      "h": 59,
+      "name": "Gold"
+    },
+    "STAT.ASCENSION": {
+      "kind": "ui",
+      "file": "ui/ascension@64.webp",
+      "w": 44,
+      "h": 64
+    },
+    "STAT.ENERGY": {
+      "kind": "ui",
+      "file": "ui/energy@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Energy"
+    },
+    "POTION.ATTACK_POTION": {
+      "kind": "potion",
+      "file": "potion/attack_potion@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Attack Potion",
+      "description": "Choose 1 of 3 random Attack cards to add into your Hand. It's free to play this turn."
+    },
+    "POTION.BLOCK_POTION": {
+      "kind": "potion",
+      "file": "potion/block_potion@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Block Potion",
+      "description": "Gain X Block."
+    },
+    "POTION.FIRE_POTION": {
+      "kind": "potion",
+      "file": "potion/fire_potion@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Fire Potion",
+      "description": "Deal X damage."
+    },
+    "POTION.ENERGY_POTION": {
+      "kind": "potion",
+      "file": "potion/energy_potion@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Energy Potion",
+      "description": "Gain X."
+    },
+    "POTION.STRENGTH_POTION": {
+      "kind": "potion",
+      "file": "potion/strength_potion@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Strength Potion",
+      "description": "Gain X Strength."
+    },
+    "POTION.FAIRY_IN_A_BOTTLE": {
+      "kind": "potion",
+      "file": "potion/fairy_in_a_bottle@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Fairy in a Bottle",
+      "description": "When your HP would be reduced to 0, instead this potion is discarded and you heal to 30% of your Max HP."
+    },
+    "RELIC.BURNING_BLOOD": {
+      "kind": "relic",
+      "file": "relic/burning_blood@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Burning Blood",
+      "description": "At the end of combat, heal X HP."
+    },
+    "RELIC.RING_OF_THE_SNAKE": {
+      "kind": "relic",
+      "file": "relic/ring_of_the_snake@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Ring of the Snake",
+      "description": "At the start of each combat, draw X additional cards."
+    },
+    "RELIC.CRACKED_CORE": {
+      "kind": "relic",
+      "file": "relic/cracked_core@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Cracked Core",
+      "description": "At the start of each combat, Channel X Lightning."
+    },
+    "RELIC.DIVINE_RIGHT": {
+      "kind": "relic",
+      "file": "relic/divine_right@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Divine Right",
+      "description": "At the start of each combat, gain X."
+    },
+    "RELIC.BOUND_PHYLACTERY": {
+      "kind": "relic",
+      "file": "relic/bound_phylactery@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Bound Phylactery",
+      "description": "At the start of your turn, Summon X."
+    },
+    "RELIC.ANCHOR": {
+      "kind": "relic",
+      "file": "relic/anchor@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Anchor",
+      "description": "Start each combat with X Block."
+    },
+    "RELIC.BAG_OF_MARBLES": {
+      "kind": "relic",
+      "file": "relic/bag_of_marbles@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Bag of Marbles",
+      "description": "At the start of each combat, apply X Vulnerable to ALL enemies."
+    },
+    "RELIC.BLOOD_VIAL": {
+      "kind": "relic",
+      "file": "relic/blood_vial@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Blood Vial",
+      "description": "At the start of each combat, heal X HP."
+    },
+    "RELIC.LANTERN": {
+      "kind": "relic",
+      "file": "relic/lantern@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Lantern",
+      "description": "Start each combat with an additional X."
+    },
+    "RELIC.ORICHALCUM": {
+      "kind": "relic",
+      "file": "relic/orichalcum@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Orichalcum",
+      "description": "If you end your turn without Block, gain X Block."
+    },
+    "RELIC.KUNAI": {
+      "kind": "relic",
+      "file": "relic/kunai@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Kunai",
+      "description": "Every time you play X Attacks in a single turn, gain X Dexterity."
+    },
+    "RELIC.LETTER_OPENER": {
+      "kind": "relic",
+      "file": "relic/letter_opener@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Letter Opener",
+      "description": "Every time you play X Skills in a single turn, deal X damage to ALL enemies."
+    },
+    "RELIC.ORNAMENTAL_FAN": {
+      "kind": "relic",
+      "file": "relic/ornamental_fan@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Ornamental Fan",
+      "description": "Every time you play X Attacks in a single turn, gain X Block."
+    },
+    "RELIC.PEN_NIB": {
+      "kind": "relic",
+      "file": "relic/pen_nib@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Pen Nib",
+      "description": "Every 10th Attack you play deals double damage."
+    },
+    "RELIC.PANTOGRAPH": {
+      "kind": "relic",
+      "file": "relic/pantograph@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Pantograph",
+      "description": "At the start of each Boss combat, heal X HP."
+    },
+    "RELIC.DOLLYS_MIRROR": {
+      "kind": "relic",
+      "file": "relic/dollys_mirror@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Dolly's Mirror",
+      "description": "Upon pickup, obtain an additional copy of a card in your Deck."
+    },
+    "RELIC.ECTOPLASM": {
+      "kind": "relic",
+      "file": "relic/ectoplasm@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Ectoplasm",
+      "description": "You can no longer gain Gold. Gain X at the start of each turn."
+    },
+    "RELIC.MANGO": {
+      "kind": "relic",
+      "file": "relic/mango@64.webp",
+      "w": 64,
+      "h": 64,
+      "name": "Mango",
+      "description": "Upon pickup, raise your Max HP by X."
+    }
+  }
+}

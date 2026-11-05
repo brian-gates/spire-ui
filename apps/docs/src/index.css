@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@import "../../../registry/spire/theme/spire.css";
+@source "../../../registry/spire";
+
+html { color-scheme: dark; }
+@layer base {
+  a { color: var(--color-spire-gold); text-underline-offset: 3px; }
+  a:focus-visible, summary:focus-visible, pre:focus-visible { outline: 2px solid var(--color-spire-energy); outline-offset: 2px; }
+  code { font-size: 0.9em; }
+}

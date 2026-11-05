@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: bun install --frozen-lockfile
+
+      - name: Typecheck (root, CLI, docs)
+        run: bun run typecheck
+      - name: Unit tests (root)
+        run: bun run test
+      - name: Unit tests (CLI)
+        run: bun run --cwd packages/cli test
+      - name: Build registry, Storybook and docs
+        run: bun run docs:build
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+        working-directory: apps/docs
+      - name: Docs e2e
+        run: bun run docs:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/docs/test-results
+          if-no-files-found: ignore

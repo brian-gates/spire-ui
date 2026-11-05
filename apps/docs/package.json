@@ -1,0 +1,25 @@
+{
+  "name": "@spire-ui/docs",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/assemble.mjs",
+    "preview": "vite preview --port 4173 --strictPort",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@fontsource/kreon": "^5",
+    "@fontsource/spectral": "^5",
+    "react-router": "^7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "@tailwindcss/vite": "^4",
+    "@vitejs/plugin-react": "^5",
+    "tailwindcss": "^4",
+    "vite": "^7"
+  }
+}
