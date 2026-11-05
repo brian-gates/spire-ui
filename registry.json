@@ -1,0 +1,51 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "spire-ui",
+  "homepage": "https://brian-gates.github.io/spire-ui/",
+  "items": [
+    {
+      "name": "spire-theme",
+      "type": "registry:theme",
+      "title": "Spire theme",
+      "description": "Dark-first warm palette, class and rarity colours, fonts, and panel/frame utilities.",
+      "files": [
+        { "path": "registry/spire/theme/spire.css", "type": "registry:theme", "target": "~/styles/spire.css" }
+      ],
+      "cssVars": {
+        "theme": {
+          "color-spire-bg": "#14100c",
+          "color-spire-panel": "#1f1912",
+          "color-spire-panel-edge": "#3a2f22",
+          "color-spire-ink": "#efe4cf",
+          "color-spire-muted": "#b3a48b",
+          "color-spire-gold": "#e2b65a",
+          "color-spire-hp": "#e0624b",
+          "color-spire-energy": "#4f9bd6",
+          "color-class-ironclad": "#e0624b",
+          "color-class-silent": "#5fae5a",
+          "color-class-defect": "#4f9bd6",
+          "color-class-regent": "#e0a23a",
+          "color-class-necrobinder": "#b07ad6",
+          "color-rarity-common": "#b3a48b",
+          "color-rarity-uncommon": "#5fa8d3",
+          "color-rarity-rare": "#e2b65a",
+          "color-rarity-boss": "#e0624b",
+          "color-rarity-event": "#5fae5a",
+          "color-rarity-starter": "#998c76",
+          "font-spire-display": "\"Cinzel\", \"Iowan Old Style\", Georgia, serif",
+          "font-spire-body": "\"Source Serif 4\", \"Iowan Old Style\", Georgia, serif"
+        }
+      }
+    },
+    {
+      "name": "spire-utils",
+      "type": "registry:lib",
+      "title": "Spire utils",
+      "description": "cn() class merging helper.",
+      "dependencies": ["clsx", "tailwind-merge"],
+      "files": [
+        { "path": "registry/spire/lib/cn.ts", "type": "registry:lib", "target": "~/lib/cn.ts" }
+      ]
+    }
+  ]
+}

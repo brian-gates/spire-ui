@@ -1,0 +1,19 @@
+{
+  "name": "spire-ui-monorepo",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "test": "vitest run",
+    "registry:build": "shadcn build -o apps/docs/public/r"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "clsx": "^2.1.1",
+    "shadcn": "^4.23.0",
+    "tailwind-merge": "^3.7.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}
