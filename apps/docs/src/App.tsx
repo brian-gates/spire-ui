@@ -15,7 +15,10 @@ const navLink = ({ isActive }: { isActive: boolean }) =>
 
 function Layout() {
   const { pathname } = useLocation();
-  useEffect(() => window.scrollTo(0, 0), [pathname]);
+  // Braces matter: newer Chrome returns a Promise from scrollTo, and React would call it as cleanup.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
   const onComponent = pathname.includes("/components/");
   return (
     <div className="flex min-h-screen flex-col">

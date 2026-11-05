@@ -116,3 +116,24 @@ test.describe("registry and storybook", () => {
     expect(await res.text()).toContain("<div id=\"root\">");
   });
 });
+
+// Chrome 156+ returns a Promise from window.scrollTo. An effect that returned it handed React a
+// non-function "cleanup", which crashed the app on the next client-side navigation (blank page).
+// Stub the newer behaviour so this is caught whatever Chromium version Playwright ships.
+test("client-side navigation works when window.scrollTo returns a Promise", async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = window.scrollTo.bind(window);
+    window.scrollTo = ((...args: Parameters<typeof window.scrollTo>) => {
+      original(...args);
+      return Promise.resolve();
+    }) as typeof window.scrollTo;
+  });
+  const problems = watchConsole(page);
+  await page.goto("/spire-ui/");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  for (const name of ["Install", "Extract art", "Components"]) {
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name, exact: true }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  }
+  expect(problems).toEqual([]);
+});
