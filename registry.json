@@ -283,6 +283,91 @@
           "target": "~/lib/spire/ui/dialog.tsx"
         }
       ]
+    },
+    {
+      "name": "spire-class-badge",
+      "type": "registry:ui",
+      "title": "ClassBadge",
+      "description": "Class emblem and name with an unknown-class fallback for modded characters.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-icon.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-assets.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/class-badge.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/class-badge.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-stat",
+      "type": "registry:ui",
+      "title": "Stats",
+      "description": "HP, gold and energy readouts that show ? for unknown values.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-icon.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/stat.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/stat.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-relic-strip",
+      "type": "registry:ui",
+      "title": "RelicStrip",
+      "description": "Relic icons with name and description tooltips and a +N overflow button.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-icon.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-tooltip.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-assets.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/relic-strip.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/relic-strip.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-potion-slots",
+      "type": "registry:ui",
+      "title": "PotionSlots",
+      "description": "Fixed potion belt with empty slots; out-of-range potions are appended, never dropped.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-icon.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-tooltip.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-assets.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/potion-slots.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/potion-slots.tsx"
+        }
+      ]
     }
   ]
 }
