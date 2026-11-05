@@ -368,6 +368,70 @@
           "target": "~/lib/spire/game/potion-slots.tsx"
         }
       ]
+    },
+    {
+      "name": "spire-player-row",
+      "type": "registry:ui",
+      "title": "PlayerRow",
+      "description": "A run player's class, name, HP, gold, relics and potions in aligned columns that wrap on narrow widths.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-class-badge.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-stat.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-relic-strip.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-potion-slots.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/player-row.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/player-row.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-run-header",
+      "type": "registry:ui",
+      "title": "RunHeader",
+      "description": "Act, floor, ascension, mode and ended badges with relative saved time.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-badge.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-icon.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/run-header.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/run-header.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-run-row",
+      "type": "registry:ui",
+      "title": "RunRow",
+      "description": "One run as a full-width themed row with header and a line per player.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-panel.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-run-header.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-player-row.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/run-row.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/run-row.tsx"
+        }
+      ]
     }
   ]
 }
