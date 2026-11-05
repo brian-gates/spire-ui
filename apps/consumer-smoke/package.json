@@ -1,0 +1,9 @@
+{
+  "name": "@spire-ui/consumer-smoke",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "scripts": { "smoke": "node scripts/smoke.mjs" },
+  "devDependencies": { "@playwright/test": "^1.50.0" }
+}

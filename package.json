@@ -15,7 +15,8 @@
     "typecheck": "tsc -p . && tsc -p packages/cli && tsc -p apps/docs",
     "docs:build": "bun run registry:build && bun run storybook:build && bun run --cwd apps/docs build",
     "docs:preview": "bun run --cwd apps/docs preview",
-    "docs:e2e": "bun run --cwd apps/docs e2e"
+    "docs:e2e": "bun run --cwd apps/docs e2e",
+    "consumer:smoke": "bun run --cwd apps/consumer-smoke smoke"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.3",

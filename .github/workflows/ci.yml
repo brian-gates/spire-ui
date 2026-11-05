@@ -44,3 +44,21 @@ jobs:
           name: playwright-report
           path: apps/docs/test-results
           if-no-files-found: ignore
+
+  consumer-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: bun install --frozen-lockfile
+      - name: Build registry, Storybook and docs
+        run: bun run docs:build
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+        working-directory: apps/consumer-smoke
+      - name: Clean shadcn install into a fresh Vite + Tailwind v4 app
+        run: bun run consumer:smoke
