@@ -73,21 +73,21 @@ reads the assembly's metadata and follows a few small, fixed patterns in each ca
 constructor, its constant getters, its variables and its `OnUpgrade`):
 
 ```jsonc
-"CARD.BLADE_DANCE": {
-  "kind": "card", "file": "card/blade_dance@256.webp", "w": 256, "h": 195, "name": "Blade Dance", ...
+"CARD.EXAMPLE": {                   // an invented card, for illustration
+  "kind": "card", "file": "card/example@256.webp", "w": 256, "h": 195, "name": "Example", ...
   "card": {
     "cost": 1,                      // energy; "X" for X-cost cards, null for unplayable ones
     "type": "Skill", "rarity": "Common", "target": "Self",
-    "pool": "silent", "frame": "card_frame_green",
-    "keywords": ["Exhaust"],        // upgradedKeywords when an upgrade changes them
+    "pool": "<pool title>", "frame": "<frame name>",
+    "keywords": ["<keyword>"],        // upgradedKeywords when an upgrade changes them
     "vars": { "Cards": { "base": 3, "upgraded": 4 } },
-    "description": "Add 3 Shivs into your Hand.",
-    "upgradedDescription": "Add 4 Shivs into your Hand."
+    "description": "Toss 3 sparks.",
+    "upgradedDescription": "Toss 4 sparks."
   }
 }
 ```
 
-Other optional fields: `upgradedCost`, `starCost` (Regent cards), and `unknown`. Enum values
+Other optional fields: `upgradedCost`, `starCost` (cards that also cost stars), and `unknown`. Enum values
 (`type`, `rarity`, `target`, keywords) are the game's own names. `vars` are the numbers the card
 text uses, by placeholder name; a var the game recalculates during combat is marked
 `"computed": true` and keeps `base` only when the code gives one. Anything the reader does not

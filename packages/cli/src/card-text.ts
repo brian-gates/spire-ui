@@ -14,6 +14,8 @@
 // Templates nest. Markup tags ([gold]...[/gold] etc.) are removed and whitespace collapsed, as in
 // the manifest's other descriptions; nothing is passed through as markup.
 
+import { stripMarkup } from "./godot";
+
 export interface TextVar {
   base?: number;
   upgraded?: number;
@@ -91,10 +93,7 @@ export function renderCardText(template: string, ctx: TextContext): RenderedText
     if (!(e instanceof TemplateError)) throw e;
     return { text: "", unresolved: ["<template>"] };
   }
-  const text = out
-    .replace(/\[\/?[a-z_]+(?:=[^\]]*)?\]/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  const text = stripMarkup(out).replace(/\s+/g, " ").trim();
   return { text, unresolved: [...unresolved] };
 }
 

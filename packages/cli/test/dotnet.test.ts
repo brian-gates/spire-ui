@@ -129,6 +129,14 @@ describe("malformed assemblies", () => {
     dotnetError(() => new Assembly(good.subarray(0, good.length - 600)));
   });
 
+  test("a TypeSpec naming itself is a DotnetError, not a stack overflow", () => {
+    const b = new AsmBuilder();
+    // TypeSpec row 1: CLASS TypeDefOrRef(TypeSpec 1) = (1 << 2) | 2.
+    const self = b.typeSpec([ET.class, 6]);
+    b.typeDef("N", "A", { extends: self });
+    dotnetError(() => new Model(new Assembly(b.build())), "corrupt");
+  });
+
   test("method bodies: bad headers, truncation and oversized code", () => {
     const b = new AsmBuilder();
     const t = b.typeDef("N", "T", { methods: [{ name: "M", body: () => code(il.ldc(1000), il.ret) }] });
@@ -164,7 +172,7 @@ describe("malformed assemblies", () => {
     };
     let parsed = 0;
     let refused = 0;
-    for (let i = 0; i < 300; i++) {
+    for (let i = 0; i < 5000; i++) {
       const copy = Buffer.from(good);
       for (let k = 0; k < 1 + rand(8); k++) copy[rand(copy.length)] = rand(256);
       try {

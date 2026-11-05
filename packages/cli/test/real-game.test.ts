@@ -20,6 +20,7 @@ describe.skipIf(!pck || !dll)("real game install (local only)", () => {
     const stats = (id: string) => toCardStats(cards.get(id)!, loc[`${id.slice("CARD.".length)}.description`]);
 
     expect(cards.size).toBeGreaterThan(500);
+    for (const id of ["CARD.BLADE_DANCE", "CARD.WHIRLWIND", "CARD.STRIKE_IRONCLAD"]) expect(cards.has(id), id).toBe(true);
     expect(stats("CARD.BLADE_DANCE")).toMatchObject({
       cost: 1,
       type: "Skill",
@@ -27,8 +28,12 @@ describe.skipIf(!pck || !dll)("real game install (local only)", () => {
       target: "Self",
       keywords: ["Exhaust"],
       vars: { Cards: { base: 3, upgraded: 4 } },
-      description: "Add 3 Shivs into your Hand.",
     });
+    // Text is checked by its numbers only; no game text is kept in the repo.
+    const blade = stats("CARD.BLADE_DANCE");
+    expect(blade.description).toContain("3");
+    expect(blade.upgradedDescription).toContain("4");
+    expect(blade.unknown).toBeUndefined();
     expect(stats("CARD.WHIRLWIND")).toMatchObject({ cost: "X", type: "Attack", rarity: "Uncommon", target: "AllEnemies", vars: { Damage: { base: 5, upgraded: 8 } } });
     expect(stats("CARD.STRIKE_IRONCLAD")).toMatchObject({ cost: 1, type: "Attack", rarity: "Basic", target: "AnyEnemy", vars: { Damage: { base: 6, upgraded: 9 } } });
     // Nearly every card is fully understood; the rest say what they lack.

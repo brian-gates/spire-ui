@@ -357,10 +357,10 @@ describe("godot helpers", () => {
 describe("card stats", () => {
   // Invented card text in the game's localization format; the cards match test/game-assembly.ts.
   const cardsJson = {
-    "STRIKE_TEST.title": "Test Strike",
-    "STRIKE_TEST.description": "Deal {Damage:diff()} damage.",
-    "BLADE_TEST.title": "Test Blades",
-    "BLADE_TEST.description": "Add {Cards:diff()} [gold]{Cards:plural:Blade|Blades}[/gold] into your [gold]Hand[/gold].",
+    "HAMMER_TEST.title": "Test Hammer",
+    "HAMMER_TEST.description": "Bonk for {Damage:diff()}.",
+    "SPARK_TEST.title": "Test Sparks",
+    "SPARK_TEST.description": "Toss {Cards:diff()} [gold]{Cards:plural:spark|sparks}[/gold] at the [gold]moon[/gold].",
     "CURSE_TEST.title": "Test Curse",
     "CURSE_TEST.description": "Unplayable.",
   };
@@ -371,9 +371,9 @@ describe("card stats", () => {
     fs.mkdirSync(dir);
     const files: FakeFile[] = [
       { path: "localization/eng/cards.json", data: Buffer.from(JSON.stringify(cardsJson)) },
-      { path: "images/packed/card_portraits/ironclad/strike_test.png.import", data: importFile(".godot/imported/strike_test.png-1.ctex") },
-      { path: ".godot/imported/strike_test.png-1.ctex", data: pngCtex(await solidPng(500, 380, [200, 30, 30]), 500, 380) },
-      { path: "images/atlases/card_atlas.sprites/ironclad/blade_test.tres", data: atlasTres("images/atlases/card_atlas.png", 4, 8, 100, 80) },
+      { path: "images/packed/card_portraits/crimson/hammer_test.png.import", data: importFile(".godot/imported/hammer_test.png-1.ctex") },
+      { path: ".godot/imported/hammer_test.png-1.ctex", data: pngCtex(await solidPng(500, 380, [200, 30, 30]), 500, 380) },
+      { path: "images/atlases/card_atlas.sprites/crimson/spark_test.tres", data: atlasTres("images/atlases/card_atlas.png", 4, 8, 100, 80) },
       { path: "images/atlases/card_atlas.png.import", data: importFile(".godot/imported/card_atlas.png-2.ctex") },
       { path: ".godot/imported/card_atlas.png-2.ctex", data: pngCtex(await solidPng(128, 128, [30, 200, 30]), 128, 128) },
     ];
@@ -396,33 +396,33 @@ describe("card stats", () => {
 
     const raw = JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8"));
     expect(raw.schemaVersion).toBe(1);
-    expect(raw.items["CARD.STRIKE_TEST"]).toEqual({
+    expect(raw.items["CARD.HAMMER_TEST"]).toEqual({
       kind: "card",
-      file: "card/strike_test@256.webp",
+      file: "card/hammer_test@256.webp",
       w: 256,
       h: 195,
-      name: "Test Strike",
-      description: "Deal X damage.",
+      name: "Test Hammer",
+      description: "Bonk for X.",
       card: {
         cost: 1,
         type: "Attack",
         rarity: "Basic",
         target: "AnyEnemy",
-        pool: "ironclad",
-        frame: "card_frame_red",
+        pool: "crimson",
+        frame: "frame_crimson",
         vars: { Damage: { base: 6, upgraded: 9 } },
-        description: "Deal 6 damage.",
-        upgradedDescription: "Deal 9 damage.",
+        description: "Bonk for 6.",
+        upgradedDescription: "Bonk for 9.",
       },
     });
     // An atlas sprite smaller than the requested size keeps its own size: never upscaled.
-    expect(raw.items["CARD.BLADE_TEST"]).toMatchObject({ file: "card/blade_test@256.webp", w: 100, h: 80, card: { description: "Add 3 Blades into your Hand.", upgradedDescription: "Add 4 Blades into your Hand." } });
-    const small = await sharp(path.join(out, "card/strike_test@64.webp")).metadata();
+    expect(raw.items["CARD.SPARK_TEST"]).toMatchObject({ file: "card/spark_test@256.webp", w: 100, h: 80, card: { description: "Toss 3 sparks at the moon.", upgradedDescription: "Toss 4 sparks at the moon." } });
+    const small = await sharp(path.join(out, "card/hammer_test@64.webp")).metadata();
     expect([small.width, small.height]).toEqual([64, 49]);
 
     const manifest = parseManifest(raw);
-    expect(manifest!.items["CARD.STRIKE_TEST"]).toEqual(raw.items["CARD.STRIKE_TEST"]);
-    expect(resolveAsset("CARD.BLADE_TEST", manifest, "/spire")).toMatchObject({ source: "extracted", card: { cost: 1, keywords: ["Exhaust"], vars: { Cards: { base: 3, upgraded: 4 } } } });
+    expect(manifest!.items["CARD.HAMMER_TEST"]).toEqual(raw.items["CARD.HAMMER_TEST"]);
+    expect(resolveAsset("CARD.SPARK_TEST", manifest, "/spire")).toMatchObject({ source: "extracted", card: { cost: 1, keywords: ["Fleeting"], vars: { Cards: { base: 3, upgraded: 4 } } } });
   });
 
   test("without readable game code, cards still get their art (with a warning) and no stats", async () => {

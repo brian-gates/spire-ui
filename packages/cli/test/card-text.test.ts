@@ -13,14 +13,14 @@ describe("card text", () => {
 
   test("plural, with {} and {:diff()} meaning the value inside an option", () => {
     const c = ctx({ Cards: { base: 1, upgraded: 2 } });
-    expect(both("Draw {Cards:diff()} {Cards:plural:card|cards}.", c)).toEqual(["Draw 1 card.", "Draw 2 cards."]);
-    expect(both("Next {Cards:plural:card is|{:diff()} cards are} free.", c)).toEqual(["Next card is free.", "Next 2 cards are free."]);
+    expect(both("Pick {Cards:diff()} {Cards:plural:gem|gems}.", c)).toEqual(["Pick 1 gem.", "Pick 2 gems."]);
+    expect(both("Next {Cards:plural:gem is|{:diff()} gems are} shiny.", c)).toEqual(["Next gem is shiny.", "Next 2 gems are shiny."]);
     expect(both("Repeat{Cards:plural:| {} times}.", c)).toEqual(["Repeat.", "Repeat 2 times."]);
   });
 
   test("IfUpgraded:show, nested inside plural", () => {
     const c = ctx({ Cards: { base: 1, upgraded: 2 } });
-    expect(both("Add {Cards:plural:{IfUpgraded:show:Blade+|Blade}|{IfUpgraded:show:Blades+|Blades}}.", c)).toEqual(["Add Blade.", "Add Blades+."]);
+    expect(both("Find {Cards:plural:{IfUpgraded:show:Pebble+|Pebble}|{IfUpgraded:show:Pebbles+|Pebbles}}.", c)).toEqual(["Find Pebble.", "Find Pebbles+."]);
     expect(both("Gain{IfUpgraded:show: more} gold.", c)).toEqual(["Gain gold.", "Gain more gold."]);
   });
 
@@ -35,7 +35,7 @@ describe("card text", () => {
 
   test("implicit conditionals, cond comparisons and choose", () => {
     const c = ctx({ Attacks: { base: 1, upgraded: 2 }, Flag: { base: 1 } }, { type: "Skill", target: "AllEnemies" });
-    expect(both("Next {Attacks:cond:>1?{Attacks:diff()} Attacks are|Attack is} doubled.", c)).toEqual(["Next Attack is doubled.", "Next 2 Attacks are doubled."]);
+    expect(both("{Attacks:cond:>1?{Attacks:diff()} owls hoot|One owl hoots}.", c)).toEqual(["One owl hoots.", "2 owls hoot."]);
     expect(renderCardText("A{InCombat:\n(in combat)|}{IsTargeting: (aimed)|}.{Flag: Yes|No}", c).text).toBe("A. Yes");
     expect(renderCardText("{CardType:choose(Attack|Skill):Hit.|Block.|Other.} Hit{TargetType:choose(AllEnemies): ALL|}.", c).text).toBe("Block. Hit ALL.");
     expect(renderCardText("{CardType:choose(Attack):Hit.|Other.}", ctx({}, { type: "Power" })).text).toBe("Other.");

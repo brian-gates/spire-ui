@@ -41,11 +41,13 @@ export function parseAtlasTres(text: string): { atlas: string; region: Rect } | 
 /** Longest localization string processed; longer (untrusted) input is cut to bound the regexes. */
 const MAX_TEXT = 8 * 1024;
 
+/** Removes the game's BBCode-style markup: inline images entirely, other tags keeping their text. */
+export function stripMarkup(s: string): string {
+  return s.replace(/\[img[^\]]*\][\s\S]*?\[\/img\]/g, "").replace(/\[\/?[a-z_]+(?:=[^\]]*)?\]/gi, "");
+}
+
 export function plainText(s: string): string {
-  return s
-    .slice(0, MAX_TEXT)
-    .replace(/\[img[^\]]*\][\s\S]*?\[\/img\]/g, "")
-    .replace(/\[\/?[a-z_]+(?:=[^\]]*)?\]/gi, "")
+  return stripMarkup(s.slice(0, MAX_TEXT))
     .replace(/\{[^{}:]*:plural:([^{}|]*)\|([^{}]*)\}/g, "$2")
     .replace(/\{[^{}]*:(?:cond|choose)[^{}]*\}/g, "")
     .replace(/\{[^{}]*\}/g, "X")

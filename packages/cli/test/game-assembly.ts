@@ -8,6 +8,8 @@ const CORE = "MegaCrit.Sts2.Core";
 export interface GameAssemblyOptions {
   /** Give CardModel's constructor a different signature (an "unsupported build"). */
   changedCardModelCtor?: boolean;
+  /** Add a card that calls known methods through references declaring too few parameters. */
+  arityTrap?: boolean;
 }
 
 export function buildGameAssembly(o: GameAssemblyOptions = {}): Buffer {
@@ -47,7 +49,7 @@ export function buildGameAssembly(o: GameAssemblyOptions = {}): Buffer {
   const cardType = enumType(`${CORE}.Entities.Cards`, "CardType", [["None", 0], ["Attack", 1], ["Skill", 2], ["Power", 3], ["Curse", 5]]);
   const rarity = enumType(`${CORE}.Entities.Cards`, "CardRarity", [["None", 0], ["Basic", 1], ["Common", 2], ["Uncommon", 3], ["Rare", 4], ["Curse", 7]]);
   const target = enumType(`${CORE}.Entities.Cards`, "TargetType", [["None", 0], ["Self", 1], ["AnyEnemy", 2], ["AllEnemies", 3]]);
-  const keyword = enumType(`${CORE}.Entities.Cards`, "CardKeyword", [["None", 0], ["Exhaust", 1], ["Ethereal", 2], ["Innate", 3], ["Retain", 4]]);
+  const keyword = enumType(`${CORE}.Entities.Cards`, "CardKeyword", [["None", 0], ["Fleeting", 1], ["Fragile", 2], ["Opening", 3], ["Kept", 4]]);
   const valueProp = enumType(`${CORE}.ValueProps`, "ValueProp", [["None", 0], ["Move", 1]]);
 
   const energyCost = b.typeDef(`${CORE}.Entities.Cards`, "CardEnergyCost", { extends: object, methods: [{ name: "UpgradeBy", params: [prim(ET.i4)], body: () => il.ret }] });
@@ -150,7 +152,7 @@ export function buildGameAssembly(o: GameAssemblyOptions = {}): Buffer {
     ],
   });
   const [dbCard, dbCardPool] = modelDb.methods as [number, number];
-  const strength = b.typeDef(`${MODELS}.Powers`, "StrengthPower", { extends: object });
+  const strength = b.typeDef(`${MODELS}.Powers`, "MightPower", { extends: object });
   const powerVarStrength = b.memberRef(b.typeSpec(b.genericInst(powerVar.token, [b.classType(strength.token)])), ".ctor", { instance: true, params: [dec] });
 
   // Cards.
@@ -164,17 +166,17 @@ export function buildGameAssembly(o: GameAssemblyOptions = {}): Buffer {
   const onUpgrade = (body: () => number[]) => ({ name: "OnUpgrade", body });
   const upgradeVar = (getVar: number[], delta: number[]) => code(il.ldarg0, il.call(getDynamicVars), getVar, delta, il.callvirt(upgradeValueBy));
 
-  const strike = card("StrikeTest", ctorBody(1, 1, 1, 2), [
+  const strike = card("HammerTest", ctorBody(1, 1, 1, 2), [
     vars(() => code(il.ldc(6), il.newobj(decCtor), il.ldc(0), il.newobj(damageVar.methods[0]!), il.newobj(singleVar), il.ret)),
     onUpgrade(() => code(upgradeVar(il.callvirt(setGetDamage), code(il.ldc(3), il.newobj(decCtor))), il.ret)),
   ]);
-  const blade = card("BladeTest", ctorBody(1, 2, 2, 1), [
+  const blade = card("SparkTest", ctorBody(1, 2, 2, 1), [
     keywords(() => code(il.ldc(1), il.newobj(singleKeyword), il.ret)),
     vars(() => code(il.ldc(3), il.newobj(cardsVar.methods[0]!), il.newobj(singleVar), il.ret)),
     onUpgrade(() => code(upgradeVar(code(il.ldstr(b.userString("Cards")), il.callvirt(setGetItem)), il.ldsfld(decOne)), il.ret)),
   ]);
   const whirl = card(
-    "WhirlTest",
+    "SpinTest",
     ctorBody(0, 1, 3, 3),
     [
       getter("get_HasEnergyCostX", () => code(il.ldc(1), il.ret), prim(ET.bool)),
@@ -221,8 +223,8 @@ export function buildGameAssembly(o: GameAssemblyOptions = {}): Buffer {
   const otherPool = b.typeDef(`${MODELS}.CardPools`, "OtherCardPool", {
     extends: cardPoolModel.token,
     methods: [
-      getter("get_Title", () => code(il.ldstr(b.userString("other")), il.ret), prim(ET.string)),
-      getter("get_CardFrameMaterialPath", () => code(il.ldstr(b.userString("card_frame_blue")), il.ret), prim(ET.string)),
+      getter("get_Title", () => code(il.ldstr(b.userString("azure")), il.ret), prim(ET.string)),
+      getter("get_CardFrameMaterialPath", () => code(il.ldstr(b.userString("frame_azure")), il.ret), prim(ET.string)),
     ],
   });
   const power = card("PowerTest", ctorBody(2, 3, 4, 1), [
@@ -230,7 +232,7 @@ export function buildGameAssembly(o: GameAssemblyOptions = {}): Buffer {
     getter("get_VisualCardPool", () => code(il.call(b.methodSpec(dbCardPool, [b.classType(otherPool.token)])), il.ret), b.classType(cardPoolModel.token)),
     vars(() => code(il.ldc(2), il.newobj(decCtor), il.newobj(powerVarStrength), il.newobj(singleVar), il.ret)),
     onUpgrade(() =>
-      code(il.ldarg0, il.call(getEnergyCost), il.ldc(-1), il.callvirt(energyCost.methods[0]!), upgradeVar(code(il.ldstr(b.userString("StrengthPower")), il.callvirt(setGetItem)), il.ldsfld(decOne)), il.ret),
+      code(il.ldarg0, il.call(getEnergyCost), il.ldc(-1), il.callvirt(energyCost.methods[0]!), upgradeVar(code(il.ldstr(b.userString("MightPower")), il.callvirt(setGetItem)), il.ldsfld(decOne)), il.ret),
     ),
   ]);
 
@@ -269,7 +271,7 @@ export function buildGameAssembly(o: GameAssemblyOptions = {}): Buffer {
 
   // A var whose value is instance state.
   const scythe = card(
-    "ScytheTest",
+    "GrowthTest",
     ctorBody(1, 1, 4, 2),
     [
       getter("get_CurrentDamage", () => code(il.ldarg0, il.ldfld(scytheField()), il.ret)),
@@ -289,12 +291,22 @@ export function buildGameAssembly(o: GameAssemblyOptions = {}): Buffer {
   ]);
   const badCtor = card("BadCtorTest", () => code(il.ldarg0, il.ldarg0, il.call(getEnergyCost), il.pop, il.ldc(1), il.ldc(1), il.ldc(1), il.ldc(1), il.call(cmCtor), il.ret));
   card("CurseTest", ctorBody(-1, 5, 7, 0), [getter("get_MaxUpgradeLevel", () => code(il.ldc(0), il.ret))]);
+  if (o.arityTrap) {
+    const noArgsInit = b.memberRef(helpers, "InitializeArray", {});
+    const noArgsUpgrade = b.memberRef(dynamicVar.token, "UpgradeValueBy", { instance: false });
+    const noArgsVar = b.memberRef(damageVar.token, ".ctor", { instance: true });
+    card("TrapTest", ctorBody(1, 2, 2, 1), [
+      keywords(() => code(il.call(noArgsInit), il.ldnull, il.ret)),
+      vars(() => code(il.newobj(noArgsVar), il.newobj(singleVar), il.ret)),
+      onUpgrade(() => code(il.call(noArgsUpgrade), il.ret)),
+    ]);
+  }
 
   b.typeDef(`${MODELS}.CardPools`, "TestCardPool", {
     extends: cardPoolModel.token,
     methods: [
-      getter("get_Title", () => code(il.ldstr(b.userString("ironclad")), il.ret), prim(ET.string)),
-      getter("get_CardFrameMaterialPath", () => code(il.ldstr(b.userString("card_frame_red")), il.ret), prim(ET.string)),
+      getter("get_Title", () => code(il.ldstr(b.userString("crimson")), il.ret), prim(ET.string)),
+      getter("get_CardFrameMaterialPath", () => code(il.ldstr(b.userString("frame_crimson")), il.ret), prim(ET.string)),
       {
         name: "GenerateAllCards",
         ret: szarray(b.classType(cardModel.token)),

@@ -80,6 +80,7 @@ export class Model {
   private readonly fieldConstants = new Map<number, number | null>();
   private fieldRvas: Map<number, number> | null = null;
   private readonly typeSpecCache = new Map<number, TypeDesc>();
+  private readonly typeSpecsInProgress = new Set<number>();
 
   constructor(asm: Assembly) {
     this.asm = asm;
@@ -150,8 +151,16 @@ export class Model {
   typeSpec(row: number): TypeDesc {
     let d = this.typeSpecCache.get(row);
     if (!d) {
-      const blob = this.asm.blob(this.asm.row(T.TypeSpec, row)[0]!);
-      d = new SigReader(this, blob).type();
+      // Signatures name types only by TypeDef/TypeRef (II.23.2.12), so a TypeSpec never needs
+      // another; the guard is defence in depth against a cycle.
+      if (this.typeSpecsInProgress.has(row)) throw new DotnetError("corrupt", `TypeSpec ${row} refers to itself`);
+      this.typeSpecsInProgress.add(row);
+      try {
+        const blob = this.asm.blob(this.asm.row(T.TypeSpec, row)[0]!);
+        d = new SigReader(this, blob).type();
+      } finally {
+        this.typeSpecsInProgress.delete(row);
+      }
       this.typeSpecCache.set(row, d);
     }
     return d;
@@ -180,8 +189,10 @@ export class Model {
 
   /** What a MethodDef, MemberRef or MethodSpec token refers to. */
   method(token: number): MethodRef {
-    const table = token >>> 24;
-    const index = token & 0xffffff;
+    return this.methodAt(token >>> 24, token & 0xffffff);
+  }
+
+  private methodAt(table: number, index: number): MethodRef {
     if (table === T.MethodDef) {
       const def = this.methodDef(index);
       return { owner: def.owner.fullName, ownerArgs: [], name: def.name, sig: def.sig, methodArgs: [], def };
@@ -196,7 +207,7 @@ export class Model {
         owner = d.name;
         ownerArgs = d.args ?? [];
       } else if (p.table === T.TypeDef || p.table === T.TypeRef) owner = this.typeDefOrRefName(p.table, p.index);
-      else if (p.table === T.MethodDef) return this.method((T.MethodDef << 24) | p.index);
+      else if (p.table === T.MethodDef) return this.methodAt(T.MethodDef, p.index);
       else owner = "<module>";
       const blob = this.asm.blob(sig);
       if (blob.length === 0 || (blob[0]! & 0x0f) === 0x06) throw new DotnetError("corrupt", "member reference is not a method");
@@ -214,7 +225,8 @@ export class Model {
     if (table === T.MethodSpec) {
       const [m, inst] = this.asm.row(T.MethodSpec, index) as [number, number];
       const c = this.asm.decodeCoded("MethodDefOrRef", m);
-      const base = this.method(((c.table === T.MethodDef ? T.MethodDef : T.MemberRef) << 24) | c.index);
+      // MethodDefOrRef only decodes to MethodDef or MemberRef rows, so this never recurses into a MethodSpec.
+      const base = this.methodAt(c.table, c.index);
       const blob = this.asm.blob(inst);
       if (blob[0] !== 0x0a) throw new DotnetError("corrupt", "bad method instantiation");
       const r = new SigReader(this, blob, 1);
@@ -223,7 +235,7 @@ export class Model {
       for (let i = 0; i < n; i++) methodArgs.push(r.type());
       return { ...base, methodArgs };
     }
-    throw new DotnetError("corrupt", `token 0x${token.toString(16)} is not a method`);
+    throw new DotnetError("corrupt", `table 0x${table.toString(16)} is not a method table`);
   }
 
   /** The MethodDef of type row `typeRow` with this name and exact signature blob, if any. */
@@ -356,6 +368,7 @@ class SigReader {
         const [v, n] = compressedUInt(this.b, this.o);
         this.o += n;
         const c = this.model.asm.decodeCoded("TypeDefOrRef", v);
+        if (c.table !== T.TypeDef && c.table !== T.TypeRef) throw new DotnetError("corrupt", "a signature names a type by TypeSpec");
         return { name: this.model.typeDefOrRefName(c.table, c.index) };
       }
       case 0x13:

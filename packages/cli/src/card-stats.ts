@@ -158,6 +158,12 @@ class CardReader {
     return b;
   }
 
+  /** The string an ldstr loads; its operand must be a #US token (table 0x70). */
+  private literal(ins: Instruction): string {
+    if (ins.op !== 0x72 || ins.int === undefined || ins.int >>> 24 !== 0x70) throw new Unknown("ldstr operand is not a string token");
+    return this.m.asm.userString(ins.int & 0xffffff);
+  }
+
   /** Default var names (from each var constructor's `base("Name", ...)`) and DynamicVarSet getters. */
   private learnVarType(t: TypeDefInfo): void {
     for (const md of this.m.methodsOf(t)) {
@@ -168,7 +174,7 @@ class CardReader {
           if (b[0]?.op === 0x02 && b[1]?.op === 0x72) {
             const call = b.slice(2).find((x) => x.op === 0x28 && this.m.method(x.int!).name === ".ctor");
             const target = call && this.m.method(call.int!);
-            if (target && target.sig.params[0]?.name === "System.String") this.varNames.set(md.row, this.m.asm.userString(b[1].int! & 0xffffff));
+            if (target && target.sig.params[0]?.name === "System.String") this.varNames.set(md.row, this.literal(b[1]));
           }
           // ldarg.0; ldtoken !0; call Type.GetTypeFromHandle; callvirt MemberInfo.get_Name: typeof(T).Name
           if (b[0]?.op === 0x02 && b[1]?.op === 0xd0 && b[2]?.op === 0x28 && b[3]?.op === 0x6f) {
@@ -184,11 +190,11 @@ class CardReader {
           const ops = b.map((x) => x.op);
           const shape = ops.join(",");
           if ((shape === "2,123,114,111,116,42" || shape === "2,123,114,111,42") && this.m.method(b[3]!.int!).name === "get_Item") {
-            this.setGetters.set(md.row, this.m.asm.userString(b[2]!.int! & 0xffffff));
+            this.setGetters.set(md.row, this.literal(b[2]!));
           }
         }
-      } catch (e) {
-        if (!(e instanceof Unknown) && !(e instanceof DotnetError)) throw e;
+      } catch {
+        // A var type that cannot be read just has no default name (its vars become unknown).
       }
     }
   }
@@ -239,7 +245,7 @@ class CardReader {
           push({ k: "null" });
           break;
         case 0x72:
-          push({ k: "str", v: this.m.asm.userString(x.int! & 0xffffff) });
+          push({ k: "str", v: this.literal(x) });
           break;
         case 0x25: {
           const v = pop();
@@ -318,7 +324,11 @@ class CardReader {
 
   private call(op: number, r: MethodRef, args: Val[], effects: Effect[], depth: number): Val | null {
     const k = key(r);
-    const a = (i: number) => args[i]!;
+    const a = (i: number): Val => {
+      const v = args[i];
+      if (!v) throw new Unknown(`call ${k}: missing argument ${i}`);
+      return v;
+    };
     if (r.owner === DECIMAL) {
       if (op === 0x73 && r.name === ".ctor") {
         if (args.length === 1 && isNum(a(0))) return { k: "dec", v: (a(0) as { v: number }).v };
@@ -333,7 +343,7 @@ class CardReader {
       if ((r.name === "op_Implicit" || r.name === ".ctor") && args.length === 1 && a(0).k === "runtime") return { k: "runtime" };
       throw new Unknown(`call ${k}`);
     }
-    if (k === "System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray") {
+    if (k === "System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray" && args.length === 2) {
       const arr = a(0);
       const f = a(1);
       if (arr.k !== "arr" || f.k !== "fieldtoken" || !this.isInt32Enum(arr.elem)) throw new Unknown("InitializeArray");
@@ -362,7 +372,7 @@ class CardReader {
     if (k === "System.Array::Empty" && args.length === 0) return { k: "list", items: [] };
     if (op === 0x73 && r.owner.startsWith("System.Func`") && r.name === ".ctor") return { k: "lambda" };
     if (op === 0x73 && r.name === ".ctor" && this.isVarType(r.owner)) return this.newVar(r, args);
-    if (COMPUTED_MODIFIERS.has(k)) {
+    if (COMPUTED_MODIFIERS.has(k) && args.length >= 1) {
       const v = a(0);
       if (v.k !== "var" || args.slice(1).some((x) => x.k !== "lambda")) throw new Unknown(`call ${k}`);
       return { ...v, computed: true };
@@ -374,7 +384,7 @@ class CardReader {
       // A getter the card class itself adds reads instance state: a value that exists only at runtime.
       if (r.owner !== CARD_MODEL && r.def && this.m.derivesFrom(r.def.owner, CARD_MODEL)) return { k: "runtime" };
     }
-    if (r.owner === DYNAMIC_VAR_SET && op === 0x6f) {
+    if (r.owner === DYNAMIC_VAR_SET && op === 0x6f && args.length >= 1) {
       if (a(0).k !== "varset") throw new Unknown(`call ${k}`);
       if (r.name === "get_Item" && args.length === 2 && a(1).k === "str") return { k: "varref", name: (a(1) as { v: string }).v };
       const name = r.def ? this.setGetters.get(r.def.row) : undefined;
@@ -432,6 +442,7 @@ class CardReader {
     const params = r.sig.params;
     let name: string | null = null;
     let first = 0;
+    if (args.length !== params.length) throw new Unknown(`${cls} constructor arity`);
     if (params[0]?.name === "System.String") {
       const n = args[0];
       if (n?.k !== "str") throw new Unknown(`${cls} name is not a constant`);
@@ -446,9 +457,10 @@ class CardReader {
     let runtime = false;
     for (let i = first; i < params.length; i++) {
       const p = params[i]!.name;
-      if (p !== DECIMAL && p !== "System.Int32" && p !== "System.Boolean") continue;
-      const v = args[i]!;
-      if (isNum(v)) base = p === "System.Boolean" ? (v.v ? 1 : 0) : v.v;
+      if (p !== DECIMAL && p !== "System.Int32") continue;
+      const v = args[i];
+      if (!v) throw new Unknown(`${cls} constructor arity`);
+      if (isNum(v)) base = v.v;
       else if (v.k === "runtime") runtime = true;
       else throw new Unknown(`${cls} value is not a constant`);
       break;
@@ -483,20 +495,20 @@ class CardReader {
     for (const t of this.poolTypes()) {
       const info = this.poolInfo(t);
       if (!info) continue;
-      const gen = this.override(t, "GenerateAllCards", CARD_POOL_MODEL);
-      if (!gen) continue;
-      let ins: Instruction[];
+      // A pool that cannot be read lists nothing; its cards' pool becomes unknown.
+      const listed: string[] = [];
       try {
-        ins = this.body(gen);
-      } catch (e) {
-        if (e instanceof Unknown) continue;
-        throw e;
+        const gen = this.override(t, "GenerateAllCards", CARD_POOL_MODEL);
+        if (!gen) continue;
+        for (const x of this.body(gen)) {
+          if (x.op !== 0x28) continue;
+          const r = this.m.method(x.int!);
+          if (key(r) === `${MODEL_DB}::Card` && r.methodArgs.length === 1) listed.push(r.methodArgs[0]!.name);
+        }
+      } catch {
+        continue;
       }
-      for (const x of ins) {
-        if (x.op !== 0x28) continue;
-        const r = this.m.method(x.int!);
-        if (key(r) !== `${MODEL_DB}::Card` || r.methodArgs.length !== 1) continue;
-        const card = r.methodArgs[0]!.name;
+      for (const card of listed) {
         const list = out.get(card) ?? [];
         list.push(info);
         out.set(card, list);
@@ -516,8 +528,8 @@ class CardReader {
       try {
         const r = this.evalGetter(t, name);
         if (r.found && r.value?.k === "str" && /^[a-z0-9_]{1,64}$/.test(r.value.v)) return r.value.v;
-      } catch (e) {
-        if (!(e instanceof Unknown) && !(e instanceof DotnetError)) throw e;
+      } catch {
+        // Unreadable: no title or frame.
       }
       return undefined;
     };
@@ -537,10 +549,10 @@ class CardReader {
   card(t: TypeDefInfo, pools: Map<string, PoolInfo[]>): CardFacts | null {
     const unknown: string[] = [];
     const reasons: string[] = [];
+    // Any failure reading a field (even an unexpected one) costs only that field.
     const note = (field: string, e: unknown) => {
-      if (!(e instanceof Unknown) && !(e instanceof DotnetError)) throw e;
       if (!unknown.includes(field)) unknown.push(field);
-      reasons.push(`${field}: ${e.message}`);
+      reasons.push(`${field}: ${e instanceof Error ? (e instanceof Unknown || e instanceof DotnetError ? e.message : `${e.name}: ${e.message}`) : String(e)}`);
     };
     // .ctor(): ... ldarg.0; ldc cost; ldc type; ldc rarity; ldc target; ldc show; call CardModel::.ctor(5 args); ret
     const ctor = this.m.methodsOf(t).find((x) => x.name === ".ctor" && x.sig.params.length === 0);
@@ -556,9 +568,8 @@ class CardReader {
       const vals = b.slice(at - 5, at).map(ldcI4);
       if (vals.some((v) => v === undefined)) return null;
       five = vals as number[];
-    } catch (e) {
-      if (e instanceof Unknown) return null;
-      throw e;
+    } catch {
+      return null;
     }
     const [cost, type, rarity, target] = five as [number, number, number, number];
     const typeName = this.enums.type.get(type);
@@ -573,7 +584,7 @@ class CardReader {
       cost: costX ? "X" : cost < 0 ? null : cost,
       type: typeName,
       rarity: rarityName,
-      vars: {},
+      vars: Object.create(null) as Record<string, CardVarFacts>,
       upgradable: false,
       unknown,
       reasons,
@@ -637,7 +648,7 @@ class CardReader {
       }
     } catch (e) {
       note("vars", e);
-      facts.vars = {};
+      facts.vars = Object.create(null) as Record<string, CardVarFacts>;
       varsKnown = false;
     }
 
@@ -657,7 +668,8 @@ class CardReader {
             if (v.base !== undefined) upgraded.set(e.var, Number(((upgraded.get(e.var) ?? v.base) + e.delta).toFixed(6)));
           } else if ("cost" in e) {
             if (typeof facts.cost !== "number") throw new Unknown("cost upgrade of a non-numeric cost");
-            upgradedCost = Math.max(0, (upgradedCost ?? facts.cost) + e.cost);
+            upgradedCost = (upgradedCost ?? facts.cost) + e.cost;
+            if (upgradedCost < 0) throw new Unknown("upgraded cost below zero");
           } else {
             const v = "add" in e ? e.add : e.remove;
             if (!this.enums.keyword.has(v)) throw new Unknown("not a CardKeyword member");
@@ -693,10 +705,9 @@ export function readCards(model: Model): Map<string, CardFacts> {
     let facts: CardFacts | null;
     try {
       facts = reader.card(t, pools);
-    } catch (e) {
-      // One malformed card class costs only that card its stats.
-      if (e instanceof DotnetError || e instanceof Unknown) continue;
-      throw e;
+    } catch {
+      // One malformed card class (whatever the failure) costs only that card its stats.
+      continue;
     }
     if (facts) out.set(cardId(t.name), facts);
   }
