@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Panel } from "../../registry/spire/ui/panel";
 import { Banner } from "../../registry/spire/ui/banner";
 import { Button } from "../../registry/spire/ui/button";
@@ -9,7 +9,7 @@ import { Badge } from "../../registry/spire/ui/badge";
 import { Divider } from "../../registry/spire/ui/divider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../registry/spire/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../registry/spire/ui/tabs";
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "../../registry/spire/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "../../registry/spire/ui/dialog";
 
 afterEach(cleanup);
 
@@ -94,6 +94,8 @@ describe("Tooltip", () => {
 
 describe("Dialog", () => {
   it("traps focus and closes on Escape", async () => {
+    const warn = vi.spyOn(console, "warn");
+    const error = vi.spyOn(console, "error");
     const user = userEvent.setup();
     render(
       <div>
@@ -101,6 +103,7 @@ describe("Dialog", () => {
           <DialogTrigger>open</DialogTrigger>
           <DialogContent className="x-dialog">
             <DialogTitle>Title</DialogTitle>
+            <DialogDescription>Details</DialogDescription>
             <button>first</button>
             <button>second</button>
           </DialogContent>
@@ -111,11 +114,16 @@ describe("Dialog", () => {
     await user.click(screen.getByText("open"));
     const dialog = await screen.findByRole("dialog");
     expect(dialog.className).toContain("x-dialog");
+    expect(dialog.getAttribute("aria-describedby")).toBe(screen.getByText("Details").id);
     for (let i = 0; i < 6; i++) {
       await user.tab();
       expect(dialog.contains(document.activeElement)).toBe(true);
     }
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(warn).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
+    warn.mockRestore();
+    error.mockRestore();
   });
 });
