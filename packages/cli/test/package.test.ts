@@ -11,6 +11,11 @@ afterAll(() => fs.rmSync(out, { recursive: true, force: true }));
 const BCDEC_COPYRIGHT = "Copyright (c) 2022 Sergii Kudlai";
 
 describe("published package", () => {
+  test("prepublishOnly rebuilds dist so a publish never ships a stale bundle", () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(pkg, "package.json"), "utf8")) as { scripts: Record<string, string> };
+    expect(manifest.scripts.prepublishOnly).toBe("npm run build && npm test");
+  });
+
   test("bundles keep bcdec's licence notice wherever the ported decoder ends up", () => {
     // The package's own tsup config; the bin bundles the decoder through extract-art.
     execFileSync(path.join(pkg, "node_modules/.bin/tsup"), ["--out-dir", out], { cwd: pkg, stdio: "pipe" });

@@ -42,7 +42,7 @@ describe("SpireManifest copies", () => {
       throw new Error(`the manifest copies differ:\n${(e as { stdout?: string }).stdout ?? String(e)}`);
     }
     expect([same, sameItem]).toEqual([true, true]);
-    expect(parseManifest(cliToRegistry)).toBe(cliToRegistry);
+    expect(parseManifest(cliToRegistry)).toEqual(cliToRegistry);
     expect(registryToCli.schemaVersion).toBe(1);
   });
 });

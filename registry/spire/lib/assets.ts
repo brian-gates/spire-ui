@@ -13,13 +13,14 @@ export type Resolved =
   | { source: "extracted"; src: string; name: string; description?: string; w: number; h: number }
   | { source: "fallback"; fallback: FallbackKey; name: string };
 
-const KINDS: Record<string, AssetKind> = {
-  CHARACTER: "class", ROOM: "room", RELIC: "relic", POTION: "potion", CARD: "card",
-};
+const PREFIX_KINDS = new Map<string, AssetKind>([
+  ["CHARACTER", "class"], ["ROOM", "room"], ["RELIC", "relic"], ["POTION", "potion"], ["CARD", "card"],
+]);
+const ASSET_KINDS: ReadonlySet<string> = new Set<AssetKind>(["relic", "potion", "card", "class", "room", "ui"]);
 
 export function kindOf(id: string): AssetKind {
   const dot = id.indexOf(".");
-  return (dot > 0 && KINDS[id.slice(0, dot)]) || "ui";
+  return (dot > 0 && PREFIX_KINDS.get(id.slice(0, dot))) || "ui";
 }
 
 const SMALL = new Set(["a", "an", "and", "as", "at", "by", "for", "in", "of", "on", "or", "the", "to"]);
@@ -37,11 +38,11 @@ export function tidyId(id: string): string {
 }
 
 export function resolveAsset(id: string, manifest: SpireManifest | null, base: string): Resolved {
-  const item = manifest?.items[id];
+  const item = manifest && Object.hasOwn(manifest.items, id) ? manifest.items[id] : undefined;
   if (!item) return { source: "fallback", fallback: fallbackKeyFor(id), name: tidyId(id) };
   return {
     source: "extracted",
-    src: `${base.replace(/\/+$/, "")}/${item.file}`,
+    src: `${base.replace(/\/+$/, "")}/${item.file.replace(/^\/+/, "")}`,
     name: item.name ?? tidyId(id),
     description: item.description,
     w: item.w,
@@ -53,8 +54,14 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object
 
 export function parseManifest(json: unknown): SpireManifest | null {
   if (!isObj(json) || json.schemaVersion !== 1 || !isObj(json.items)) return null;
-  for (const item of Object.values(json.items)) {
+  const items: Record<string, ManifestItem> = Object.create(null);
+  for (const [id, item] of Object.entries(json.items)) {
     if (!isObj(item) || typeof item.file !== "string" || typeof item.w !== "number" || typeof item.h !== "number") return null;
+    if (typeof item.kind !== "string" || !ASSET_KINDS.has(item.kind)) continue; // unknown kind: drop the item, it falls back
+    const clean = { ...item } as unknown as ManifestItem;
+    if (typeof item.name !== "string") delete clean.name;
+    if (typeof item.description !== "string") delete clean.description;
+    items[id] = clean;
   }
-  return json as unknown as SpireManifest;
+  return { ...(json as unknown as SpireManifest), items };
 }

@@ -24,6 +24,7 @@ afterEach(() => {
 const cases: [string, () => Promise<unknown>][] = [
   ["404", async () => ({ ok: false, status: 404, json: async () => ({}) })],
   ["schemaVersion 2", async () => ({ ok: true, status: 200, json: async () => ({ schemaVersion: 2 }) })],
+  ["rejected fetch", async () => { throw new TypeError("network down"); }],
   ["invalid json", async () => ({ ok: true, status: 200, json: async () => { throw new SyntaxError("bad"); } })],
 ];
 

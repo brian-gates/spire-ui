@@ -1,6 +1,6 @@
 # spire-ui (CLI)
 
-Command-line companion to [Spire UI](../../README.md). It reads art from **your own local
+Command-line companion to [Spire UI](https://github.com/brian-gates/spire-ui#readme). It reads art from **your own local
 install** of Slay the Spire 2 so you can use it with the components on your machine. It ships no
 game art, text or fonts, and nothing it extracts should be committed or redistributed.
 

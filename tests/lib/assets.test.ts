@@ -27,6 +27,9 @@ describe("kindOf", () => {
     expect(kindOf("CARD.X")).toBe("card");
     expect(kindOf("STAT.HP")).toBe("ui");
   });
+  it("ignores inherited Object.prototype names", () => {
+    for (const id of ["constructor", "__proto__", "toString", "constructor.X", "__proto__.X"]) expect(kindOf(id)).toBe("ui");
+  });
 });
 
 describe("resolveAsset", () => {
@@ -43,7 +46,33 @@ describe("resolveAsset", () => {
   });
 });
 
+describe("resolveAsset hardening", () => {
+  it("falls back for ids that are Object.prototype members", () => {
+    for (const id of ["constructor", "__proto__", "toString", "hasOwnProperty"]) {
+      expect(resolveAsset(id, manifest, "/art").source).toBe("fallback");
+    }
+  });
+  it("strips leading slashes from file", () => {
+    const m = { ...manifest, items: { "RELIC.A": { kind: "relic" as const, file: "//relics/a.png", w: 1, h: 1 } } };
+    expect(resolveAsset("RELIC.A", m, "/art/")).toMatchObject({ src: "/art/relics/a.png" });
+  });
+});
+
 describe("parseManifest", () => {
+  it("drops non-string name/description but keeps the item", () => {
+    const parsed = parseManifest({ ...manifest, items: { "RELIC.A": { kind: "relic", file: "a.png", w: 1, h: 1, name: 5, description: {} } } });
+    expect(parsed?.items["RELIC.A"]).toEqual({ kind: "relic", file: "a.png", w: 1, h: 1 });
+    expect(resolveAsset("RELIC.A", parsed, "/art")).toMatchObject({ source: "extracted", name: "A" });
+  });
+  it("drops items with an unknown kind", () => {
+    const parsed = parseManifest({ ...manifest, items: { "RELIC.A": { kind: "bogus", file: "a.png", w: 1, h: 1 }, "RELIC.B": { kind: "relic", file: "b.png", w: 1, h: 1 } } });
+    expect(Object.keys(parsed!.items)).toEqual(["RELIC.B"]);
+  });
+  it("keeps a __proto__ item id as an own property only", () => {
+    const parsed = parseManifest(JSON.parse('{"schemaVersion":1,"gameVersion":"1","generatedAt":"n","items":{"__proto__":{"kind":"ui","file":"x.png","w":1,"h":1}}}'));
+    expect(Object.hasOwn(parsed!.items, "__proto__")).toBe(true);
+    expect(({} as Record<string, unknown>).file).toBeUndefined();
+  });
   it("accepts valid", () => expect(parseManifest(manifest)).toEqual(manifest));
   it("rejects bad", () => {
     expect(parseManifest({ schemaVersion: 2 })).toBeNull();
