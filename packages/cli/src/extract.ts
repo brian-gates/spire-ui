@@ -376,6 +376,10 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
   fs.mkdirSync(path.dirname(out), { recursive: true });
   const staging = fs.mkdtempSync(`${out}.tmp-`);
   activeStaging.add(staging);
+  // mkdtemp creates the dir 0700 and the rename keeps that, which locks out a web server running
+  // as another user (and survives rsync -a). Give it the mode mkdir would: 0777 minus the umask.
+  const umask = process.umask();
+  fs.chmodSync(staging, 0o777 & ~umask);
   try {
     const items: Record<string, ManifestItem> = {};
     const counts = Object.fromEntries(ASSET_KINDS.map((k) => [k, 0])) as Record<AssetKind, number>;

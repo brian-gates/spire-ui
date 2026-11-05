@@ -68,6 +68,20 @@ const siblings = (out: string) => fs.readdirSync(path.dirname(out)).filter((f) =
 const DEFAULT_KINDS = ["relic", "potion", "class", "room", "ui"] as const;
 
 describe("extract", () => {
+  // The output is staged in a mkdtemp dir (mode 0700) and renamed into place. It must end up with
+  // normal permissions, or a web server running as another user (and rsync -a copies) can't read it.
+  test.skipIf(process.platform === "win32")("output folder gets normal permissions, not the private staging mode", async () => {
+    const game = await fakeGame();
+    const out = outDir("mode");
+    const old = process.umask(0o022);
+    try {
+      await extract({ pck: path.join(game, PCK_NAME), out, sizes: [64], kinds: [...DEFAULT_KINDS], fonts: false });
+    } finally {
+      process.umask(old);
+    }
+    expect(fs.statSync(out).mode & 0o777).toBe(0o755);
+  });
+
   test("writes every mapped icon at each size and a manifest the resolver accepts", async () => {
     const game = await fakeGame();
     const out = outDir("ok");

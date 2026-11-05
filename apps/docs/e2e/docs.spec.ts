@@ -123,10 +123,11 @@ test.describe("registry and storybook", () => {
 test("client-side navigation works when window.scrollTo returns a Promise", async ({ page }) => {
   await page.addInitScript(() => {
     const original = window.scrollTo.bind(window);
-    window.scrollTo = ((...args: Parameters<typeof window.scrollTo>) => {
-      original(...args);
+    // Newer Chrome returns a Promise here; the DOM typings still say void, hence the cast.
+    window.scrollTo = ((x: number, y: number) => {
+      original(x, y);
       return Promise.resolve();
-    }) as typeof window.scrollTo;
+    }) as unknown as typeof window.scrollTo;
   });
   const problems = watchConsole(page);
   await page.goto("/spire-ui/");
