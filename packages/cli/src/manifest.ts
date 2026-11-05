@@ -22,6 +22,22 @@ export interface CardStats {
   descriptionRuns?: CardTextRun[]; upgradedDescriptionRuns?: CardTextRun[];
   unknown?: string[];
 }
+/**
+ * A relic's or potion's stats, read from the game's code: its rarity (RelicRarity / PotionRarity
+ * member name), the pool that lists it (e.g. "ironclad", "shared"), and its description with real
+ * numbers. Fields that could not be read are left out and named in `unknown`.
+ */
+export interface ItemStats {
+  rarity?: string; pool?: string;
+  description?: string;
+  /** The description as styled runs, line breaks kept (`\n`). */
+  descriptionRuns?: CardTextRun[];
+  unknown?: string[];
+}
+/** A nine-slice texture's border widths, in pixels of the item's largest file (`file`). */
+export interface NineSlice {
+  left: number; top: number; right: number; bottom: number;
+}
 export interface ManifestItem {
   kind: AssetKind; file: string; w: number; h: number; name?: string; description?: string;
   /**
@@ -30,6 +46,10 @@ export interface ManifestItem {
    */
   widths?: number[];
   card?: CardStats;
+  relic?: ItemStats;
+  potion?: ItemStats;
+  /** For a nine-slice UI piece (UI.HOVER_TIP): the borders the game stretches it by. */
+  slice?: NineSlice;
 }
 /** A box in the game's card scene, in its pixels from the frame's top left; `fontSize` for text. */
 export interface CardLayoutBox {

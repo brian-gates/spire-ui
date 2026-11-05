@@ -4,7 +4,9 @@ import * as fs from "node:fs";
 import { describe, expect, test } from "vitest";
 import { CARD_PIECES } from "../src/card-pieces";
 import { readCards, toCardStats } from "../src/card-stats";
-import { mapIds, readCardLayout } from "../src/extract";
+import { mapIds, readCardLayout, readHoverTip } from "../src/extract";
+import { hoverTipSlice } from "../src/hover-tip";
+import { readItems, toItemStats } from "../src/item-stats";
 import { Assembly } from "../src/dotnet/metadata";
 import { Model } from "../src/dotnet/model";
 import { defaultGameDirs, findAssembly, findPck } from "../src/game-paths";
@@ -54,5 +56,30 @@ describe.skipIf(!pck || !dll)("real game install (local only)", () => {
     const layout = await readCardLayout(index, read);
     expect(layout).toMatchObject({ w: 300, h: 422 });
     for (const k of ["portrait", "portraitBorder", "banner", "title", "plaque", "orb", "star", "text"]) expect(layout!.boxes[k], k).toBeDefined();
+  });
+
+  test("relics and potions read from the game's code; the hover tip's nine-slice reads", async () => {
+    const model = new Model(new Assembly(fs.readFileSync(dll!)));
+    const relics = readItems(model, "relic");
+    const potions = readItems(model, "potion");
+    expect(relics.size).toBeGreaterThan(250);
+    expect(potions.size).toBeGreaterThan(50);
+    const index = await readPckIndex(pck!);
+    const loc = async (file: string) => JSON.parse((await readPckFile(pck!, index.entries.find((e) => e.path === `localization/eng/${file}.json`)!)).toString("utf8")) as Record<string, string>;
+    const relicLoc = await loc("relics");
+    // Checked by rarity, pool and numbers only; no game text is kept in the repo.
+    const burning = toItemStats(relics.get("RELIC.BURNING_BLOOD")!, relicLoc["BURNING_BLOOD.description"]);
+    expect(burning).toMatchObject({ rarity: "Starter", pool: "ironclad" });
+    expect(burning.description).toContain("6");
+    expect(toItemStats(potions.get("POTION.FIRE_POTION")!, (await loc("potions"))["FIRE_POTION.description"])).toMatchObject({ rarity: "Common", pool: "shared", description: expect.stringContaining("20") });
+    // Nearly every relic and potion is fully understood; the rest say what they lack.
+    for (const all of [relics, potions]) expect([...all.values()].filter((f) => f.unknown.length).length).toBeLessThan(all.size / 20);
+
+    const read = (e: Parameters<typeof readPckFile>[1]) => readPckFile(pck!, e);
+    const patch = await readHoverTip(index, read);
+    expect(patch).not.toBeNull();
+    const ids = await mapIds(index, read, ["ui"]);
+    expect(ids.get("UI.HOVER_TIP")?.texture).toBeTruthy();
+    expect(hoverTipSlice(patch!, 320, 96)).toEqual({ left: 55, top: 43, right: 72, bottom: 21 });
   });
 });

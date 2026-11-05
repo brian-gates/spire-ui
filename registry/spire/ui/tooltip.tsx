@@ -18,19 +18,22 @@ export function TooltipTrigger(props: ComponentProps<typeof TooltipPrimitive.Tri
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
 }
 
+/** `bare`: no panel of its own, for content that draws its own (such as GameTip). */
 export function TooltipContent({
   className,
   sideOffset = 6,
+  bare = false,
   children,
   ...props
-}: ComponentProps<typeof TooltipPrimitive.Content>) {
+}: ComponentProps<typeof TooltipPrimitive.Content> & { bare?: boolean }) {
   return (
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Content
         data-slot="tooltip-content"
+        data-bare={bare || undefined}
         sideOffset={sideOffset}
         className={cn(
-          "spire-panel font-spire-body z-50 max-w-xs px-3 py-2 text-sm text-spire-ink",
+          bare ? "z-50" : "spire-panel font-spire-body z-50 max-w-xs px-3 py-2 text-sm text-spire-ink",
           className,
         )}
         {...props}

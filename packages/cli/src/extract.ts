@@ -10,6 +10,8 @@ import * as path from "node:path";
 import sharp, { type Sharp } from "sharp";
 import { CARD_PIECES, type CardLayout, type Hsv, hsvTint, parseCardLayout, parseHsvMaterial, pieceBoxes } from "./card-pieces";
 import { type CardFacts, readCards, toCardStats, UnsupportedBuildError } from "./card-stats";
+import { HOVER_TIP_ID, HOVER_TIP_IMAGE, HOVER_TIP_SCENE, type HoverTipPatch, hoverTipSlice, parseHoverTipScene } from "./hover-tip";
+import { type ItemFacts, type ItemKind, readItems, toItemStats } from "./item-stats";
 import { CtexError, decodeCtex } from "./ctex";
 import { Assembly, DotnetError, MAX_ASSEMBLY } from "./dotnet/metadata";
 import { Model } from "./dotnet/model";
@@ -77,7 +79,7 @@ export interface MappedId {
   texture: TextureRef | null;
   name?: string;
   description?: string;
-  /** The raw localization description (cards only), for rendering with the card's numbers. */
+  /** The raw localization description (cards, relics, potions), for rendering with its numbers. */
   template?: string;
   /** A card piece (see card-pieces.ts): drawn at card scale, margin restored, tinted when `tint` is set. */
   piece?: { tint?: Hsv };
@@ -241,7 +243,7 @@ export async function mapIds(index: PckIndex, read: (e: PckEntry) => Promise<Buf
   const add = async (id: string, kind: AssetKind, slug: string, sources: Source[], title?: string, description?: string) => {
     const name = title === undefined ? undefined : plainText(title) || undefined;
     const desc = description === undefined ? undefined : plainText(description) || undefined;
-    const template = kind === "card" && description !== undefined ? { template: description } : {};
+    const template = (kind === "card" || kind === "relic" || kind === "potion") && description !== undefined ? { template: description } : {};
     out.set(id, { kind, slug, texture: await resolve(sources), ...(name ? { name } : {}), ...(desc ? { description: desc } : {}), ...template });
   };
 
@@ -295,8 +297,19 @@ export async function mapIds(index: PckIndex, read: (e: PckEntry) => Promise<Buf
       const texture = p.material && !tint ? null : await resolve([p.source]);
       out.set(p.id, { kind: "ui", slug: p.slug, texture, piece: tint ? { tint } : {} });
     }
+    // The hover tip panel: drawn as it is, at piece scales (it is stretched, not shown as an icon).
+    out.set(HOVER_TIP_ID, { kind: "ui", slug: "hover_tip", texture: await resolve([{ image: HOVER_TIP_IMAGE }]), piece: {} });
   }
   return out;
+}
+
+/** The hover tip scene's nine-patch, or null when the scene is missing or not one this version reads. */
+export async function readHoverTip(index: PckIndex, read: (e: PckEntry) => Promise<Buffer>): Promise<HoverTipPatch | null> {
+  const entry = index.entries.find((e) => e.path === HOVER_TIP_SCENE);
+  if (!entry || entry.size > 1024n * 1024n) return null;
+  const data = await read(entry);
+  if (data.subarray(0, 4).toString("latin1") !== "[gd_") return null;
+  return parseHoverTipScene(data.toString("utf8"));
 }
 
 /** The card scene's layout (see card-pieces.ts), or null when the scene is missing or unreadable. */
@@ -403,8 +416,8 @@ export interface ExtractOptions {
   /** The game's .pck file. */
   pck: string;
   /**
-   * The game's sts2.dll, read for card stats when `kinds` has "card". Default: found beside the
-   * pack; null: do not read card stats.
+   * The game's sts2.dll, read for card, relic and potion stats when `kinds` has those. Default:
+   * found beside the pack; null: do not read stats.
    */
   assembly?: string | null;
   out: string;
@@ -429,30 +442,53 @@ export interface ExtractSummary {
   bytes: number;
   /** Card stats written (null when cards were not extracted or the game's code was unreadable). */
   cardStats: { cards: number; withUnknown: string[] } | null;
+  /** Relic / potion stats written, by kind (absent when that kind was not extracted or unreadable). */
+  itemStats: Partial<Record<ItemKind, { items: number; withUnknown: string[] }>>;
+}
+
+interface GameFacts {
+  cards: Map<string, CardFacts> | null;
+  relic: Map<string, ItemFacts> | null;
+  potion: Map<string, ItemFacts> | null;
 }
 
 /**
- * Card facts from the game's code, or null (with a warning) when it is missing or not a build this
- * reader understands. Card art never depends on it.
+ * Card, relic and potion facts from the game's code, for the wanted kinds; each is null (with a
+ * warning) when the code is missing or not a build its reader understands. Art never depends on it.
  */
-function loadCardFacts(file: string | null, warn?: (message: string) => void): Map<string, CardFacts> | null {
+function loadFacts(file: string | null, kinds: readonly AssetKind[], warn?: (message: string) => void): GameFacts {
+  const none: GameFacts = { cards: null, relic: null, potion: null };
+  const wanted = (["card", "relic", "potion"] as const).filter((k) => kinds.includes(k));
+  if (wanted.length === 0) return none;
   if (!file) {
-    warn?.("card stats skipped: the game's sts2.dll was not found beside the pack");
-    return null;
+    warn?.("stats skipped: the game's sts2.dll was not found beside the pack");
+    return none;
   }
+  let model: Model;
   try {
     const size = fs.statSync(file).size;
     if (size > MAX_ASSEMBLY) throw new DotnetError("unsupported", `it is larger than ${MAX_ASSEMBLY / 1024 / 1024} MB`);
-    return readCards(new Model(new Assembly(fs.readFileSync(file))));
+    model = new Model(new Assembly(fs.readFileSync(file)));
   } catch (e) {
-    if (e instanceof DotnetError || e instanceof UnsupportedBuildError) {
-      warn?.(`card stats skipped: ${file} is not a game build this version understands (${e.message})`);
+    if (e instanceof DotnetError) warn?.(`stats skipped: ${file} is not a game build this version understands (${e.message})`);
+    else warn?.(`stats skipped: cannot read ${file} (${e instanceof Error ? e.message : String(e)})`);
+    return none;
+  }
+  // Stats are optional: no failure reading them (even a bug here) costs the user their art.
+  const attempt = <T>(what: string, fn: () => T): T | null => {
+    try {
+      return fn();
+    } catch (e) {
+      if (e instanceof DotnetError || e instanceof UnsupportedBuildError) warn?.(`${what} stats skipped: ${file} is not a game build this version understands (${e.message})`);
+      else warn?.(`${what} stats skipped: cannot read ${file} (${e instanceof Error ? e.message : String(e)})`);
       return null;
     }
-    // Card stats are optional: no failure reading them (even a bug here) costs the user their art.
-    warn?.(`card stats skipped: cannot read ${file} (${e instanceof Error ? e.message : String(e)})`);
-    return null;
-  }
+  };
+  return {
+    cards: wanted.includes("card") ? attempt("card", () => readCards(model)) : null,
+    relic: wanted.includes("relic") ? attempt("relic", () => readItems(model, "relic")) : null,
+    potion: wanted.includes("potion") ? attempt("potion", () => readItems(model, "potion")) : null,
+  };
 }
 
 export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
@@ -469,11 +505,14 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
   const read = (e: PckEntry) => readPckFile(o.pck, e);
   const mapped = await mapIds(index, read, o.kinds);
   const cardLayout = o.kinds.includes("ui") ? await readCardLayout(index, read) : null;
-  const hasPieces = [...mapped.values()].some((m) => m.piece && m.texture);
+  const hasPieces = [...mapped].some(([id, m]) => id !== HOVER_TIP_ID && m.piece && m.texture);
   if (hasPieces && !cardLayout) o.warn?.("card layout not found: scenes/cards/card.tscn is missing or not a scene this version reads");
-  const cardFacts = o.kinds.includes("card") && o.assembly !== null ? loadCardFacts(o.assembly ?? findAssembly(o.pck), o.warn) : null;
+  const hoverTip = o.kinds.includes("ui") ? await readHoverTip(index, read) : null;
+  const facts: GameFacts = o.assembly === null ? { cards: null, relic: null, potion: null } : loadFacts(o.assembly ?? findAssembly(o.pck), o.kinds, o.warn);
+  const cardFacts = facts.cards;
   const withUnknown: string[] = [];
   let cardStats = 0;
+  const itemCounts: Record<ItemKind, { items: number; withUnknown: string[] }> = { relic: { items: 0, withUnknown: [] }, potion: { items: 0, withUnknown: [] } };
 
   fs.mkdirSync(path.dirname(out), { recursive: true });
   const staging = fs.mkdtempSync(`${out}.tmp-`);
@@ -547,12 +586,25 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
         const outputs = [...byWidth.values()].sort((a, b) => a.width - b.width);
         for (const o of outputs) write(confined(staging, iconFile(m.kind, m.slug, o.width)), o.data);
         const top = outputs[outputs.length - 1]!;
-        const facts = m.kind === "card" ? cardFacts?.get(id) : undefined;
-        const card = facts ? toCardStats(facts, m.template) : undefined;
+        const cf = m.kind === "card" ? cardFacts?.get(id) : undefined;
+        const card = cf ? toCardStats(cf, m.template) : undefined;
         if (card) {
           cardStats++;
           if (card.unknown) withUnknown.push(id);
         }
+        const itemKind = m.kind === "relic" || m.kind === "potion" ? m.kind : null;
+        const itemFacts = itemKind ? facts[itemKind]?.get(id) : undefined;
+        const item = itemKind && itemFacts ? toItemStats(itemFacts, m.template) : undefined;
+        if (itemKind && item) {
+          itemCounts[itemKind].items++;
+          if (item.unknown) itemCounts[itemKind].withUnknown.push(id);
+        }
+        // The nine-slice borders, in the largest file's pixels (the texture's own size or smaller).
+        const tipSlice = id === HOVER_TIP_ID && hoverTip ? hoverTipSlice(hoverTip, sw, sh) : null;
+        const scale = top.width / sw;
+        const slice = tipSlice
+          ? { left: Math.round(tipSlice.left * scale), top: Math.round(tipSlice.top * scale), right: Math.round(tipSlice.right * scale), bottom: Math.round(tipSlice.bottom * scale) }
+          : null;
         items[id] = {
           kind: m.kind,
           file: iconFile(m.kind, m.slug, top.width),
@@ -562,6 +614,8 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
           ...(m.name ? { name: m.name } : {}),
           ...(m.description ? { description: m.description } : {}),
           ...(card ? { card } : {}),
+          ...(itemKind && item ? { [itemKind]: item } : {}),
+          ...(slice ? { slice } : {}),
         };
         counts[m.kind]++;
       }
@@ -615,6 +669,7 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
       files,
       bytes,
       cardStats: cardFacts ? { cards: cardStats, withUnknown: withUnknown.sort() } : null,
+      itemStats: Object.fromEntries((["relic", "potion"] as const).filter((k) => facts[k]).map((k) => [k, { items: itemCounts[k].items, withUnknown: itemCounts[k].withUnknown.sort() }])),
     };
   } catch (e) {
     fs.rmSync(staging, { recursive: true, force: true });

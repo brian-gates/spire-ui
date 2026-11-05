@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { PlayerRow, type RunPlayerView } from "@spire/game/player-row";
 import { CardFrame } from "@spire/game/card-frame";
 import { GameCard } from "@spire/game/game-card";
+import { GameTip } from "@spire/game/game-tip";
 import { ClassBadge } from "@spire/game/class-badge";
 import { MapNode } from "@spire/game/map-node";
 import { PotionSlots } from "@spire/game/potion-slots";
@@ -229,6 +230,17 @@ export const COMPONENTS: ComponentDoc[] = [
       <div className="flex flex-wrap gap-4">
         <GameCard id="CARD.STRIKE_IRONCLAD" />
         <GameCard id="CARD.STRIKE_IRONCLAD" upgrades={1} />
+      </div>
+    ),
+  },
+  {
+    slug: "game-tip", name: "GameTip",
+    summary: "The game's hover tip: its panel texture stretched by the game's nine-slice, the title in gold and the description in cream with its coloured keywords and numbers. RelicStrip and PotionSlots show one per item (ItemTip, from the relic or potion stats extract-art reads). Without the extracted panel it uses the kit's own, as here.",
+    usage: `<ItemTip id="RELIC.ANCHOR" />\n<GameTip title="Lucky Pebble" rarity={{ label: "Uncommon Relic", colour: "#87ceeb" }} runs={[{ text: "Gain " }, { text: "3", style: "blue" }, { text: " Block." }]} />`,
+    Demo: () => (
+      <div className="flex flex-wrap items-start gap-4">
+        <GameTip title="Lucky Pebble" rarity={{ label: "Uncommon Relic", colour: "#87ceeb" }} runs={[{ text: "At the start of each combat, gain " }, { text: "3", style: "blue" }, { text: " " }, { text: "Block", style: "gold" }, { text: "." }]} />
+        <GameTip title="Murky Tonic" runs={[{ text: "Heal " }, { text: "5", style: "blue" }, { text: " HP." }]} />
       </div>
     ),
   },

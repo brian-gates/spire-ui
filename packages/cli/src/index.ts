@@ -21,7 +21,8 @@ app serves, with a manifest.json for Spire UI's <SpireAssets>. Nothing is downlo
   --sizes <list>     icon box sizes in px for responsive srcset, e.g. 64,128,256,512; a size
                      that would upscale an icon is skipped (default: ${DEFAULT_SIZES.join(",")})
   --kinds <list>     any of ${ASSET_KINDS.join(",")} (default: ${DEFAULT_KINDS.join(",")});
-                     card also reads card stats and text from the game's code (sts2.dll)
+                     card, relic and potion also read stats and text from the
+                     game's code (sts2.dll)
   --fonts            also copy the game's fonts (for local use only)
   -h, --help         show this help`;
 
@@ -103,6 +104,13 @@ async function main(argv: string[]): Promise<number> {
     console.log(
       `spire-ui: card stats for ${s.cardStats.cards} cards from the game's code` +
         (u.length ? `; ${u.length} with fields it could not read (${u.slice(0, 5).join(", ")}${u.length > 5 ? ", ..." : ""}), listed in each card's "unknown"` : ""),
+    );
+  }
+  for (const [kind, st] of Object.entries(s.itemStats)) {
+    const u = st.withUnknown;
+    console.log(
+      `spire-ui: ${kind} stats for ${st.items} ${kind}s from the game's code` +
+        (u.length ? `; ${u.length} with fields it could not read (${u.slice(0, 5).join(", ")}${u.length > 5 ? ", ..." : ""}), listed in each one's "unknown"` : ""),
     );
   }
   if (values.fonts) {

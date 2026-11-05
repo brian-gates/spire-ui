@@ -286,11 +286,11 @@ describe("extract", () => {
     const game = await fakeGame();
     const out = outDir("stuck");
     const pck = path.join(game, PCK_NAME);
-    await extract({ pck, out, sizes: [32], kinds: ["relic"], fonts: false });
+    await extract({ pck, out, sizes: [32], kinds: ["relic"], fonts: false, assembly: null });
     fs.chmodSync(path.join(out, "relic"), 0o555); // its files cannot be unlinked
     const warnings: string[] = [];
     try {
-      await extract({ pck, out, sizes: [16], kinds: ["relic"], fonts: false, warn: (m) => warnings.push(m) });
+      await extract({ pck, out, sizes: [16], kinds: ["relic"], fonts: false, assembly: null, warn: (m) => warnings.push(m) });
       expect(fs.existsSync(path.join(out, "relic/anchor@16.webp"))).toBe(true);
       expect(warnings).toHaveLength(1);
       expect(warnings[0]).toMatch(/could not remove the previous output at .*\.old-/);
@@ -413,7 +413,7 @@ describe("card stats", () => {
   };
 
   /** A game with two card portraits (a 500x380 image and a 100x80 atlas sprite) and, optionally, its code. */
-  async function cardGame(dll: Buffer | null): Promise<string> {
+  async function cardGame(dll: Buffer | null, extra: FakeFile[] = []): Promise<string> {
     const dir = path.join(tmp, `cards-${n++}`);
     fs.mkdirSync(dir);
     const files: FakeFile[] = [
@@ -423,6 +423,7 @@ describe("card stats", () => {
       { path: "images/atlases/card_atlas.sprites/crimson/spark_test.tres", data: atlasTres("images/atlases/card_atlas.png", 4, 8, 100, 80) },
       { path: "images/atlases/card_atlas.png.import", data: importFile(".godot/imported/card_atlas.png-2.ctex") },
       { path: ".godot/imported/card_atlas.png-2.ctex", data: pngCtex(await solidPng(128, 128, [30, 200, 30]), 128, 128) },
+      ...extra,
     ];
     fs.writeFileSync(path.join(dir, PCK_NAME), buildPck({ files }));
     if (dll) {
@@ -482,7 +483,7 @@ describe("card stats", () => {
       const warnings: string[] = [];
       const summary = await extract({ pck: path.join(game, PCK_NAME), out, sizes: [64], kinds: ["card"], fonts: false, warn: (m) => warnings.push(m) });
       expect(warnings).toHaveLength(1);
-      expect(warnings[0]).toMatch(dll ? /card stats skipped: .*sts2\.dll is not a game build/ : /card stats skipped: the game's sts2\.dll was not found/);
+      expect(warnings[0]).toMatch(dll ? /^stats skipped: .*sts2\.dll is not a game build/ : /^stats skipped: the game's sts2\.dll was not found/);
       expect(summary.cardStats).toBeNull();
       expect(summary.counts.card).toBe(2);
       const items = JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8")).items;
@@ -498,11 +499,53 @@ describe("card stats", () => {
     expect(summary.counts.card).toBe(2);
   });
 
-  test("assembly: null, or kinds without card, never reads the game's code", async () => {
+  test("--kinds relic,potion,ui adds relic and potion stats, and the hover tip panel with its nine-slice", async () => {
+    // Invented text and an invented hover tip scene in the game's formats.
+    const relicsJson = { "LAMP_TEST.title": "Test Lamp", "LAMP_TEST.description": "Draw [blue]{Cards}[/blue] more {Cards:plural:card|cards}." };
+    const potionsJson = { "TONIC_TEST.title": "Test Tonic", "TONIC_TEST.description": "Deal [blue]{Damage}[/blue] damage." };
+    const scene = [
+      '[gd_scene load_steps=2 format=3 uid="uid://test"]',
+      '[node name="HoverTip" type="MarginContainer"]',
+      '[node name="Bg" type="NinePatchRect" parent="."]\nregion_rect = Rect2(0, 0, 110, 40)\npatch_margin_left = 20\npatch_margin_top = 10\npatch_margin_right = 30\npatch_margin_bottom = 12',
+    ].join("\n\n");
+    const png = (rgb: [number, number, number], w: number, h: number) => solidPng(w, h, rgb).then((p) => pngCtex(p, w, h));
+    const game = await cardGame(buildGameAssembly(), [
+      { path: "localization/eng/relics.json", data: Buffer.from(JSON.stringify(relicsJson)) },
+      { path: "localization/eng/potions.json", data: Buffer.from(JSON.stringify(potionsJson)) },
+      { path: "images/relics/lamp_test.png.import", data: importFile(".godot/imported/lamp_test.png-3.ctex") },
+      { path: ".godot/imported/lamp_test.png-3.ctex", data: await png([200, 200, 30], 32, 32) },
+      { path: "images/potions/tonic_test.png.import", data: importFile(".godot/imported/tonic_test.png-4.ctex") },
+      { path: ".godot/imported/tonic_test.png-4.ctex", data: await png([30, 30, 200], 32, 32) },
+      { path: "scenes/ui/hover_tip.tscn", data: Buffer.from(scene) },
+      { path: "images/ui/hover_tip.png.import", data: importFile(".godot/imported/hover_tip.png-5.ctex") },
+      { path: ".godot/imported/hover_tip.png-5.ctex", data: await png([20, 40, 50], 100, 32) },
+    ]);
+    const out = outDir("items");
+    const warnings: string[] = [];
+    const summary = await extract({ pck: path.join(game, PCK_NAME), out, sizes: [32], kinds: ["relic", "potion", "ui"], fonts: false, warn: (m) => warnings.push(m) });
+    expect(warnings).toEqual([]);
+    expect(summary.cardStats).toBeNull();
+    expect(summary.itemStats).toEqual({ relic: { items: 1, withUnknown: [] }, potion: { items: 1, withUnknown: [] } });
+    const raw = JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8"));
+    expect(raw.items["RELIC.LAMP_TEST"].relic).toEqual({
+      rarity: "Common",
+      pool: "ember",
+      description: "Draw 2 more cards.",
+      descriptionRuns: [{ text: "Draw " }, { text: "2", style: "blue" }, { text: " more cards." }],
+    });
+    expect(raw.items["POTION.TONIC_TEST"].potion).toMatchObject({ rarity: "Rare", pool: "ember", description: "Deal 20 damage." });
+    // The scene's region overhangs the 100 x 32 texture by 10 x 8: the right and bottom borders shrink by that.
+    expect(raw.items["UI.HOVER_TIP"]).toEqual({ kind: "ui", file: "ui/hover_tip@100.webp", w: 100, h: 32, widths: [25, 50, 100], slice: { left: 20, top: 10, right: 20, bottom: 4 } });
+    const manifest = parseManifest(raw)!;
+    expect(manifest.items["RELIC.LAMP_TEST"]).toEqual(raw.items["RELIC.LAMP_TEST"]);
+    expect(resolveAsset("UI.HOVER_TIP", manifest, "/spire")).toMatchObject({ source: "extracted", slice: { left: 20, top: 10, right: 20, bottom: 4 } });
+  });
+
+  test("assembly: null, or kinds without cards, relics or potions, never reads the game's code", async () => {
     const game = await cardGame(Buffer.from("garbage"));
     const warnings: string[] = [];
-    const a = await extract({ pck: path.join(game, PCK_NAME), out: outDir("skip"), sizes: [64], kinds: ["card"], fonts: false, assembly: null, warn: (m) => warnings.push(m) });
-    const b = await extract({ pck: path.join(game, PCK_NAME), out: outDir("skip"), sizes: [64], kinds: ["relic"], fonts: false, warn: (m) => warnings.push(m) });
-    expect([a.cardStats, b.cardStats, warnings]).toEqual([null, null, []]);
+    const a = await extract({ pck: path.join(game, PCK_NAME), out: outDir("skip"), sizes: [64], kinds: ["card", "relic"], fonts: false, assembly: null, warn: (m) => warnings.push(m) });
+    const b = await extract({ pck: path.join(game, PCK_NAME), out: outDir("skip"), sizes: [64], kinds: ["class", "room"], fonts: false, warn: (m) => warnings.push(m) });
+    expect([a.cardStats, a.itemStats, b.cardStats, b.itemStats, warnings]).toEqual([null, {}, null, {}, []]);
   });
 });

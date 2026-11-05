@@ -2,16 +2,7 @@ import { useState } from "react";
 import { SpireIcon } from "../ui/spire-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useSpireAsset } from "../lib/assets-provider";
-
-function RelicTip({ id }: { id: string }) {
-  const a = useSpireAsset(id);
-  return (
-    <>
-      <div className="font-spire-display text-spire-gold">{a.name}</div>
-      {a.source === "extracted" && a.description && <div className="text-spire-muted">{a.description}</div>}
-    </>
-  );
-}
+import { ItemTip } from "./game-tip";
 
 function RelicName({ id }: { id: string }) {
   return <li>{useSpireAsset(id).name}</li>;
@@ -30,7 +21,7 @@ function Relic({ id }: { id: string }) {
           <SpireIcon id={id} size={32} />
         </TooltipTrigger>
       </li>
-      <TooltipContent><RelicTip id={id} /></TooltipContent>
+      <TooltipContent bare><ItemTip id={id} /></TooltipContent>
     </Tooltip>
   );
 }
@@ -59,7 +50,8 @@ function Overflow({ hidden }: { hidden: { id: string }[] }) {
 }
 
 /**
- * Relics in acquisition order; beyond `max` (default 8) the rest collapse into a "+N" button listing their names.
+ * Relics in acquisition order, each with the game's hover tip (name, rarity, description); beyond `max`
+ * (default 8) the rest collapse into a "+N" button listing their names.
  * Omitted/`undefined` means the relics are unknown (not recorded), which is different from an empty list ("No relics").
  */
 export function RelicStrip(props: { relics?: { id: string }[]; max?: number }) {

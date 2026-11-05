@@ -83,6 +83,14 @@ margins are restored, so every piece has the size the card scene lays out. `--si
 apply to them: each is written at 1/4, 1/2 and 1x of its texture (the textures are 2x the game's
 300x422 card).
 
+#### Hover tip panel
+
+Also with `ui`: `UI.HOVER_TIP`, the panel texture the game's hover tips (the relic and potion
+tooltips) stretch, written as it is at 1/4, 1/2 and 1x. The item gets `slice`
+(`{ left, top, right, bottom }`, in pixels of its largest file): the nine-patch borders from the
+game's hover tip scene, less the part of the scene's region that overhangs the texture. Spire UI's
+`GameTip` draws it as a CSS `border-image`.
+
 The manifest gains a top-level `cardLayout` (`{ w: 300, h: 422, boxes: { portrait, frame,
 portraitBorder, banner, title, plaque, orb, star, text } }`), read from the game's card scene: each
 box in card pixels from the frame's top left, with `fontSize` for text. Spire UI's `GameCard`
@@ -106,6 +114,25 @@ What is extracted:
 - `--fonts`: the game's Kreon Bold and Spectral Bold, as the TrueType files the game embeds (not
   subset or converted), recorded as `fonts.display` and `fonts.body`. They are the game's copies,
   for local use only.
+
+### Relic and potion stats
+
+With the `relic` and `potion` kinds (on by default), each `RELIC.*` / `POTION.*` item also gets a
+`relic` / `potion` object, read from the game's code the same way as card stats (below):
+
+```jsonc
+"relic": {
+  "rarity": "Common",               // the game's RelicRarity / PotionRarity name
+  "pool": "shared",                 // the pool class listing it, e.g. "ironclad", "event"
+  "description": "Gain 3 Block.",   // English text with its real numbers
+  "descriptionRuns": [{ "text": "Gain " }, { "text": "3", "style": "blue" }, { "text": " Block." }]
+}
+```
+
+Fields the reader cannot read are left out and named in `unknown` (`rarity`, `pool` for an item two
+pools list, `vars`, `description` when a placeholder has no value outside a run). A text that picks
+something during a run (a card, a relic) shows the game's own wording for when nothing is picked
+yet. Without `sts2.dll` the run warns and writes the art without these objects.
 
 ### Card stats
 

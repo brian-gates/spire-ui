@@ -122,7 +122,8 @@ describe("spire-ui extract-art", () => {
     const game = await fakeGame("game-ok");
     const out = path.join(tmp, "out-ok");
     const r = run("extract-art", "--game-dir", game, "--out", out, "--sizes", "16,8");
-    expect(r.stderr).toBe("");
+    // Relic and potion stats come from the game's code, which this fake install does not have.
+    expect(r.stderr).toBe("spire-ui: warning: stats skipped: the game's sts2.dll was not found beside the pack\n");
     expect(r.code).toBe(0);
     expect(r.stdout).toMatch(/relic 1/);
     const manifest = parseManifest(JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8")))!;
@@ -136,7 +137,7 @@ describe("spire-ui extract-art", () => {
     const r = run("extract-art", "--game-dir", game, "--out", path.join(tmp, "out-fonts"), "--fonts");
     expect(r.code).toBe(0);
     expect(r.stdout).toMatch(/game's fonts \(fonts\/kreon_bold\.ttf\).*local use only/);
-    expect(r.stderr).toMatch(/^spire-ui: warning: font fonts\/spectral_bold\.ttf not found/);
+    expect(r.stderr).toMatch(/^spire-ui: warning: font fonts\/spectral_bold\.ttf not found/m);
   });
 
   test("the default --out is ./public/spire", async () => {

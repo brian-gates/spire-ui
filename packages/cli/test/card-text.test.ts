@@ -75,6 +75,17 @@ describe("card text", () => {
     expect(renderCardText("Deal {Missing:diff()} {Missing:plural:time|times}.{Rider: Extra.|}", c)).toMatchObject({ text: "Deal X times.", unresolved: ["Missing", "Rider"] });
   });
 
+  test("relic text: percentMore, an unset StringValue as a condition, unknown formatters", () => {
+    const c = ctx({ Increase: { base: 1.25 }, Half: { base: 1.125 }, Picked: {} });
+    expect(renderCardText("Gain [blue]{Increase:percentMore()}%[/blue] more.", c)).toMatchObject({ text: "Gain 25% more.", unresolved: [] });
+    // Rounded half to even, as Convert.ToInt32(decimal) does.
+    expect(renderCardText("{Half:percentMore()}", c).text).toBe("12");
+    expect(renderCardText("Take {Picked.StringValue:cond:[gold]{Picked}[/gold]|a card} home.", c)).toMatchObject({ text: "Take a card home.", unresolved: [] });
+    expect(renderCardText("Take {Picked.StringValue} home.", c)).toMatchObject({ text: "Take X home.", unresolved: ["Picked.StringValue"] });
+    expect(renderCardText("Take {Other.StringValue:cond:x|y}.", c).unresolved).toEqual(["Other.StringValue"]);
+    expect(renderCardText("Gain {Increase:sparkle()} more.", c)).toMatchObject({ text: "Gain X more.", unresolved: ["Increase"] });
+  });
+
   test("malformed templates render nothing rather than garbage", () => {
     expect(renderCardText("Deal {Damage", ctx({}))).toEqual({ text: "", runs: [], unresolved: ["<template>"] });
     expect(renderCardText("{a b}", ctx({}))).toEqual({ text: "", runs: [], unresolved: ["<template>"] });

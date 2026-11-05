@@ -1,6 +1,6 @@
-// A synthetic stand-in for the game's sts2.dll: the types the card reader looks up, by the same
-// names, and a handful of invented cards whose members use each IL pattern the reader understands
-// (and some it must refuse). No game code or data.
+// A synthetic stand-in for the game's sts2.dll: the types the card, relic and potion readers look
+// up, by the same names, and a handful of invented cards, relics and potions whose members use each
+// IL pattern the readers understand (and some they must refuse). No game code or data.
 import { AsmBuilder, code, ET, type FieldSpec, il, type MethodSpecDef, methodVar, prim, type SigType, szarray, typeVar } from "./dotnet-fixtures";
 
 const CORE = "MegaCrit.Sts2.Core";
@@ -10,6 +10,8 @@ export interface GameAssemblyOptions {
   changedCardModelCtor?: boolean;
   /** Add a card that calls known methods through references declaring too few parameters. */
   arityTrap?: boolean;
+  /** Leave out RelicModel (a build the relic reader does not support). */
+  noRelicModel?: boolean;
 }
 
 export function buildGameAssembly(o: GameAssemblyOptions = {}): Buffer {
@@ -149,9 +151,11 @@ export function buildGameAssembly(o: GameAssemblyOptions = {}): Buffer {
     methods: [
       { name: "Card", instance: false, genericParams: 1, ret: methodVar(0), body: () => code(il.ldnull, il.ret) },
       { name: "CardPool", instance: false, genericParams: 1, ret: methodVar(0), body: () => code(il.ldnull, il.ret) },
+      { name: "Relic", instance: false, genericParams: 1, ret: methodVar(0), body: () => code(il.ldnull, il.ret) },
+      { name: "Potion", instance: false, genericParams: 1, ret: methodVar(0), body: () => code(il.ldnull, il.ret) },
     ],
   });
-  const [dbCard, dbCardPool] = modelDb.methods as [number, number];
+  const [dbCard, dbCardPool, dbRelic, dbPotion] = modelDb.methods as [number, number, number, number];
   const strength = b.typeDef(`${MODELS}.Powers`, "MightPower", { extends: object });
   const powerVarStrength = b.memberRef(b.typeSpec(b.genericInst(powerVar.token, [b.classType(strength.token)])), ".ctor", { instance: true, params: [dec] });
 
@@ -322,6 +326,60 @@ export function buildGameAssembly(o: GameAssemblyOptions = {}): Buffer {
         fat: true,
       },
     ],
+  });
+  // Relics and potions.
+  const relicRarity = enumType(`${CORE}.Entities.Relics`, "RelicRarity", [["None", 0], ["Starter", 1], ["Common", 2], ["Rare", 4], ["Ancient", 7]]);
+  const potionRarity = enumType(`${CORE}.Entities.Potions`, "PotionRarity", [["None", 0], ["Common", 1], ["Rare", 3]]);
+  const itemModel = (name: string, rarityEnum: number) =>
+    b.typeDef(MODELS, name, {
+      extends: object,
+      flags: 0x00100081,
+      methods: [
+        { name: "get_Rarity", ret: b.valueType(rarityEnum) },
+        { name: "get_DynamicVars", ret: b.classType(dynamicVarSet.token), body: () => code(il.ldnull, il.ret) },
+      ],
+    });
+  const relicModel = o.noRelicModel ? null : itemModel("RelicModel", relicRarity);
+  const potionModel = itemModel("PotionModel", potionRarity);
+  const rarityGetter = (enumTok: number, v: number) => ({ name: "get_Rarity", ret: b.valueType(enumTok), body: () => code(il.ldc(v), il.ret) });
+  const item = (ns: string, model: { token: number }, name: string, methods: MethodSpecDef[], fields: FieldSpec[] = []) =>
+    b.typeDef(ns, name, { extends: model.token, fields, methods: [{ name: ".ctor", body: () => il.ret }, ...methods] });
+  const listing = (db: number, types: { token: number }[], base: number) =>
+    code(il.ldc(types.length), il.newarr(base), ...types.map((t, i) => code(il.dup, il.ldc(i), il.call(b.methodSpec(db, [b.classType(t.token)])), il.stelemRef)), il.ret);
+
+  if (relicModel) {
+    const RELICS = `${MODELS}.Relics`;
+    const relicPoolModel = b.typeDef(MODELS, "RelicPoolModel", { extends: object, flags: 0x00100081 });
+    const lantern = item(RELICS, relicModel, "LampTest", [rarityGetter(relicRarity, 2), vars(() => code(il.ldc(2), il.newobj(cardsVar.methods[0]!), il.newobj(singleVar), il.ret))]);
+    // A relic two pools list (its pool is unknown), with a var whose value is instance state.
+    const shared = item(RELICS, relicModel, "CharmTest", [
+      rarityGetter(relicRarity, 4),
+      getter("get_Stacks", () => code(il.ldarg0, il.ldfld(charmField()), il.ret)),
+      vars(() => code(il.ldarg0, il.call(shared.methods[2]!), il.call(decImplicit), il.ldc(0), il.newobj(damageVar.methods[0]!), il.newobj(singleVar), il.ret)),
+    ], [{ name: "_stacks", sig: prim(ET.i4), flags: 0x0001 }]);
+    const charmField = () => shared.fields[0]!;
+    // Patterns the reader must refuse: a rarity outside the enum and vars from a local.
+    const odd = item(RELICS, relicModel, "OddRelicTest", [rarityGetter(relicRarity, 9), vars(() => code(il.ldloc0, il.newobj(singleVar), il.ret))]);
+    const pool = (name: string, listed: { token: number }[]) =>
+      b.typeDef(`${MODELS}.RelicPools`, name, {
+        extends: relicPoolModel.token,
+        methods: [{ name: "GenerateAllRelics", ret: szarray(b.classType(relicModel.token)), body: () => listing(dbRelic, listed, relicModel.token), fat: true }],
+      });
+    pool("EmberRelicPool", [lantern, shared, odd]);
+    pool("SharedRelicPool", [shared]);
+  }
+
+  const POTIONS = `${MODELS}.Potions`;
+  const potionPoolModel = b.typeDef(MODELS, "PotionPoolModel", { extends: object, flags: 0x00100081 });
+  const tonic = item(POTIONS, potionModel, "TonicTest", [rarityGetter(potionRarity, 3), vars(() => code(il.ldc(20), il.newobj(decCtor), il.ldc(0), il.newobj(damageVar.methods[0]!), il.newobj(singleVar), il.ret))]);
+  // A potion pool that returns another class's static list (as the game's character pools do).
+  const epoch = b.typeDef(`${CORE}.Timeline.Epochs`, "EmberEpochTest", {
+    extends: object,
+    methods: [{ name: "get_Potions", instance: false, ret: szarray(b.classType(potionModel.token)), body: () => listing(dbPotion, [tonic], potionModel.token), fat: true }],
+  });
+  b.typeDef(`${MODELS}.PotionPools`, "EmberPotionPool", {
+    extends: potionPoolModel.token,
+    methods: [{ name: "GenerateAllPotions", ret: szarray(b.classType(potionModel.token)), body: () => code(il.call(epoch.methods[0]!), il.ret) }],
   });
   return b.build();
 }

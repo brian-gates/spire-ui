@@ -12,8 +12,17 @@ const fixture = {
   gameVersion: "v0.0.0",
   generatedAt: "2026-01-01T00:00:00.000Z",
   items: {
-    "RELIC.ANCHOR": { kind: "relic", file: "relic/anchor@64.webp", w: 64, h: 64, widths: [32, 64], name: "Anchor", description: "Text." },
-    "POTION.X": { kind: "potion", file: "potion/x@64.webp", w: 40, h: 48 },
+    "RELIC.ANCHOR": {
+      kind: "relic",
+      file: "relic/anchor@64.webp",
+      w: 64,
+      h: 64,
+      widths: [32, 64],
+      name: "Anchor",
+      description: "Text.",
+      relic: { rarity: "Common", pool: "shared", description: "Gain 3 Block.", descriptionRuns: [{ text: "Gain " }, { text: "3", style: "blue" }, { text: " Block." }] },
+    },
+    "POTION.X": { kind: "potion", file: "potion/x@64.webp", w: 40, h: 48, potion: { rarity: "Rare", unknown: ["pool"] } },
     "CARD.X": { kind: "card", file: "card/x@64.webp", w: 64, h: 48 },
     "CARD.Y": {
       kind: "card",
@@ -43,6 +52,7 @@ const fixture = {
     "CHARACTER.X": { kind: "class", file: "class/x@64.webp", w: 64, h: 64 },
     "ROOM.X": { kind: "room", file: "room/x@64.webp", w: 64, h: 64 },
     "STAT.X": { kind: "ui", file: "ui/x@64.webp", w: 64, h: 64 },
+    "UI.HOVER_TIP": { kind: "ui", file: "ui/hover_tip@320.webp", w: 320, h: 96, widths: [80, 160, 320], slice: { left: 55, top: 43, right: 72, bottom: 21 } },
   },
   fonts: { display: "fonts/a.ttf", body: "fonts/b.ttf" },
   cardLayout: { w: 300, h: 422, boxes: { frame: { x: 0, y: 0, w: 300, h: 422 }, title: { x: 45, y: 7, w: 210, h: 54, fontSize: 26 } } },
@@ -57,6 +67,7 @@ type Same<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 
 const same: Same<CliManifest, RegistryManifest> = true;
 const sameItem: Same<CliManifest["items"][string], RegistryManifest["items"][string]> = true;
 const sameCard: Same<NonNullable<CliManifest["items"][string]["card"]>, NonNullable<RegistryManifest["items"][string]["card"]>> = true;
+const sameItemStats: Same<NonNullable<CliManifest["items"][string]["relic"]>, NonNullable<RegistryManifest["items"][string]["relic"]>> = true;
 
 describe("SpireManifest copies", () => {
   test("the CLI's copy and the resolver's copy are the same type", () => {
@@ -68,7 +79,7 @@ describe("SpireManifest copies", () => {
     } catch (e) {
       throw new Error(`the manifest copies differ:\n${(e as { stdout?: string }).stdout ?? String(e)}`);
     }
-    expect([same, sameItem, sameCard]).toEqual([true, true, true]);
+    expect([same, sameItem, sameCard, sameItemStats]).toEqual([true, true, true, true]);
     expect(parseManifest(cliToRegistry)).toEqual(cliToRegistry);
     expect(registryToCli.schemaVersion).toBe(1);
   });

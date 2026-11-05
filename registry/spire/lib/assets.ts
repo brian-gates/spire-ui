@@ -21,6 +21,22 @@ export interface CardStats {
   descriptionRuns?: CardTextRun[]; upgradedDescriptionRuns?: CardTextRun[];
   unknown?: string[];
 }
+/**
+ * A relic's or potion's stats, read from the game's code: its rarity (RelicRarity / PotionRarity
+ * member name), the pool that lists it (e.g. "ironclad", "shared"), and its description with real
+ * numbers. Fields that could not be read are left out and named in `unknown`.
+ */
+export interface ItemStats {
+  rarity?: string; pool?: string;
+  description?: string;
+  /** The description as styled runs, line breaks kept (`\n`). */
+  descriptionRuns?: CardTextRun[];
+  unknown?: string[];
+}
+/** A nine-slice texture's border widths, in pixels of the item's largest file (`file`). */
+export interface NineSlice {
+  left: number; top: number; right: number; bottom: number;
+}
 export interface ManifestItem {
   kind: AssetKind; file: string; w: number; h: number; name?: string; description?: string;
   /**
@@ -29,6 +45,10 @@ export interface ManifestItem {
    */
   widths?: number[];
   card?: CardStats;
+  relic?: ItemStats;
+  potion?: ItemStats;
+  /** For a nine-slice UI piece (UI.HOVER_TIP): the borders the game stretches it by. */
+  slice?: NineSlice;
 }
 /** A box in the game's card scene, in its pixels from the frame's top left; `fontSize` for text. */
 export interface CardLayoutBox {
@@ -55,6 +75,7 @@ export type Resolved =
       /** Every size as `<url> <width>w`, ascending, when the manifest lists `widths`. */
       srcSet?: string;
       name: string; description?: string; w: number; h: number; card?: CardStats;
+      relic?: ItemStats; potion?: ItemStats; slice?: NineSlice;
     }
   | { source: "fallback"; fallback: FallbackKey; name: string };
 
@@ -111,6 +132,9 @@ export function resolveAsset(id: string, manifest: SpireManifest | null, base: s
     w: item.w,
     h: item.h,
     ...(item.card ? { card: item.card } : {}),
+    ...(item.relic ? { relic: item.relic } : {}),
+    ...(item.potion ? { potion: item.potion } : {}),
+    ...(item.slice ? { slice: item.slice } : {}),
   };
 }
 
@@ -160,6 +184,27 @@ function parseCardStats(v: unknown): CardStats | null {
   return out;
 }
 
+/** A manifest item's `relic` / `potion`, keeping only well-typed fields; null when it is not an object. */
+function parseItemStats(v: unknown): ItemStats | null {
+  if (!isObj(v)) return null;
+  const out: ItemStats = {};
+  for (const k of ["rarity", "pool", "description"] as const) if (isStr(v[k])) out[k] = v[k];
+  const runs = textRuns(v.descriptionRuns);
+  if (runs) out.descriptionRuns = runs;
+  const unknown = strings(v.unknown);
+  if (unknown) out.unknown = unknown;
+  return out;
+}
+
+/** A `slice` if all four borders are non-negative integers that leave room inside `w` x `h`; else null. */
+function parseSlice(v: unknown, w: number, h: number): NineSlice | null {
+  if (!isObj(v)) return null;
+  const { left, top, right, bottom } = v;
+  const ok = (n: unknown): n is number => Number.isSafeInteger(n) && (n as number) >= 0;
+  if (!ok(left) || !ok(top) || !ok(right) || !ok(bottom) || left + right >= w || top + bottom >= h) return null;
+  return { left, top, right, bottom };
+}
+
 export function parseManifest(json: unknown): SpireManifest | null {
   if (!isObj(json) || json.schemaVersion !== 1 || !isObj(json.items)) return null;
   const items: Record<string, ManifestItem> = Object.create(null);
@@ -175,6 +220,14 @@ export function parseManifest(json: unknown): SpireManifest | null {
     const card = item.card === undefined ? null : parseCardStats(item.card);
     if (card) clean.card = card;
     else delete clean.card;
+    for (const k of ["relic", "potion"] as const) {
+      const stats = item[k] === undefined ? null : parseItemStats(item[k]);
+      if (stats) clean[k] = stats;
+      else delete clean[k];
+    }
+    const slice = item.slice === undefined ? null : parseSlice(item.slice, item.w, item.h);
+    if (slice) clean.slice = slice;
+    else delete clean.slice;
     items[id] = clean;
   }
   const out = { ...(json as unknown as SpireManifest), items };

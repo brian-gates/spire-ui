@@ -1,6 +1,7 @@
 import { SpireIcon } from "../ui/spire-icon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useSpireAsset } from "../lib/assets-provider";
+import { ItemTip } from "./game-tip";
 
 type Potion = { id: string; slot: number };
 
@@ -17,16 +18,15 @@ function Filled({ id }: { id: string }) {
           <SpireIcon id={id} size={28} />
         </TooltipTrigger>
       </li>
-      <TooltipContent>
-        <div className="font-spire-display text-spire-gold">{a.name}</div>
-        {a.source === "extracted" && a.description && <div className="text-spire-muted">{a.description}</div>}
+      <TooltipContent bare>
+        <ItemTip id={id} />
       </TooltipContent>
     </Tooltip>
   );
 }
 
 /**
- * Fixed potion belt. Potions land in their own slot; any that cannot (slot out of range, taken, or not an integer)
+ * Fixed potion belt, each potion with the game's hover tip. Potions land in their own slot; any that cannot (slot out of range, taken, or not an integer)
  * are appended after the belt so no potion is ever dropped.
  */
 export function PotionSlots(props: { potions: Potion[]; maxSlots: number }) {

@@ -11,6 +11,9 @@
 //   {Var:cond:>1?a|b} {Var:cond:a|b}   comparisons / truthiness
 //   {Var:choose(A|B|C):a|b|c|other}    match a string value
 //   {Flag:a|b}                    implicit conditional on a boolean
+//   {Var:percentMore()}           a multiplier as a whole percentage: 1.25 -> "25"
+// Relic and potion descriptions use the same subset. A formatter outside it is not guessed at:
+// the placeholder renders "X" and is reported unresolved.
 // Templates nest. For `text`, markup tags ([gold]...[/gold] etc.) are removed and whitespace
 // collapsed, as in the manifest's other descriptions; nothing is passed through as markup. `runs`
 // is the same text as styled runs, line breaks kept: the game's colour tags (gold, blue, purple)
@@ -50,7 +53,7 @@ export interface RenderedText {
 const MAX_TEMPLATE = 8192;
 const MAX_DEPTH = 16;
 const MAX_OUTPUT = 16384;
-const FORMATTERS = new Set(["diff", "inverseDiff", "plural", "energyIcons", "starIcons", "show", "cond", "choose"]);
+const FORMATTERS = new Set(["diff", "inverseDiff", "plural", "energyIcons", "starIcons", "show", "cond", "choose", "percentMore"]);
 /** Context flags that are false outside combat (the card library / a deck view). */
 const OUT_OF_COMBAT = new Set(["InCombat", "IsTargeting"]);
 
@@ -189,8 +192,11 @@ function render(s: string, ctx: TextContext, current: Value, depth: number, unre
 function placeholder(body: string, before: string, ctx: TextContext, current: Value, depth: number, unresolved: Set<string>): string {
   const colon = body.indexOf(":");
   const selector = colon < 0 ? body : body.slice(0, colon);
-  if (!/^[A-Za-z0-9_]*$/.test(selector)) throw new TemplateError(`bad selector ${selector}`);
-  const value = lookup(selector, ctx, current, unresolved);
+  // `{Var.StringValue...}`: a var's text (a card or relic the game picks during a run). Outside a run
+  // it is unset, so the template's own "not set" branch is the text the game shows there.
+  const stringValue = /^([A-Za-z0-9_]+)\.StringValue$/.exec(selector);
+  if (!stringValue && !/^[A-Za-z0-9_]*$/.test(selector)) throw new TemplateError(`bad selector ${selector}`);
+  const value = stringValue ? (Object.hasOwn(ctx.vars, stringValue[1]!) ? null : (unresolved.add(selector), null)) : lookup(selector, ctx, current, unresolved);
   const rest = colon < 0 ? null : body.slice(colon + 1);
   const sub = (option: string | undefined, v: Value) => (option === undefined ? "" : render(option, ctx, v, depth + 1, unresolved));
   const afterDigit = /\d\u0002*$/.test(before);
@@ -203,7 +209,14 @@ function placeholder(body: string, before: string, ctx: TextContext, current: Va
     name = m[1]!;
     args = m[2] ?? null;
     format = m[0].endsWith(":") ? rest!.slice(m[0].length) : null;
+  } else if (m && m[2] !== undefined) {
+    // `{Var:name(...)}` with a formatter this renderer does not know.
+    unresolved.add(selector);
+    return "X";
   }
+
+  // An unset string value is only meaningful as a condition; printed, it would be made up.
+  if (stringValue && !(name === "cond" || (name === null && format !== null))) unresolved.add(selector);
 
   const numberText = (v: Value): string => {
     if (typeof v === "number") return formatNumber(v);
@@ -239,6 +252,16 @@ function placeholder(body: string, before: string, ctx: TextContext, current: Va
     case "starIcons": {
       const n = typeof value === "number" ? value : null;
       return `${afterDigit ? " " : ""}${n === null ? "X" : formatNumber(n)} ${n === 1 ? "Star" : "Stars"}`;
+    }
+    case "percentMore": {
+      if (typeof value !== "number") {
+        unresolved.add(selector);
+        return "X";
+      }
+      // Convert.ToInt32(decimal) rounds half to even.
+      const x = Number(((value - 1) * 100).toFixed(6));
+      const f = Math.floor(x);
+      return String(x - f === 0.5 ? (f % 2 === 0 ? f : f + 1) : Math.round(x));
     }
     case "plural": {
       const opts = splitOptions(format ?? "");
