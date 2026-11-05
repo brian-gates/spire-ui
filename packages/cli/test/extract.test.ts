@@ -359,7 +359,7 @@ describe("mapIds", () => {
     expect(ids.get("STAT.DECK")).toMatchObject({ kind: "ui", slug: "deck", texture: { entry: { path: ".godot/imported/ui_atlas.ctex" } } });
     expect(ids.has("CARD.ANYTHING")).toBe(false);
     for (const [id, m] of ids) {
-      expect(id).toMatch(/^[A-Z]+\.[A-Z0-9_]+$/);
+      expect(id).toMatch(/^[A-Z]+(?:\.[A-Z0-9_]+)+$/);
       expect(m.slug).toMatch(/^[a-z0-9_-]+$/);
     }
   });
@@ -461,6 +461,8 @@ describe("card stats", () => {
         vars: { Damage: { base: 6, upgraded: 9 } },
         description: "Bonk for 6.",
         upgradedDescription: "Bonk for 9.",
+        descriptionRuns: [{ text: "Bonk for " }, { text: "6", style: "number" }, { text: "." }],
+        upgradedDescriptionRuns: [{ text: "Bonk for " }, { text: "9", style: "upgraded" }, { text: "." }],
       },
     });
     // An atlas sprite smaller than the requested size keeps its own size: never upscaled.

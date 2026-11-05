@@ -63,6 +63,31 @@ smallest one otherwise. Manifests written before `widths` existed have none; the
 the largest size, so update them (`shadcn add` the `spire-icon` item again) when you re-extract
 with several sizes.
 
+#### Card pieces
+
+With the `ui` kind the run also writes the pieces the game draws a card from, as `ui` items:
+
+- `UI.CARD_FRAME.<ATTACK|SKILL|POWER>.<COLOUR>` (colours `RED GREEN BLUE ORANGE PINK COLORLESS CURSE
+  QUEST`, the suffix of a card's `frame`) and `UI.CARD_FRAME.QUEST.QUEST`. The frame includes the
+  dark text panel.
+- `UI.CARD_BANNER.<RARITY>`, `UI.CARD_PORTRAIT_BORDER.<SHAPE>.<RARITY>` and `UI.CARD_PLAQUE.<RARITY>`
+  (rarities `COMMON UNCOMMON RARE CURSE EVENT QUEST STATUS ANCIENT`; the plaque is a nine-patch,
+  26px left and 24px right at full size).
+- `UI.CARD_ORB.<IRONCLAD|SILENT|DEFECT|REGENT|NECROBINDER|COLORLESS|QUEST>` and `UI.CARD_STAR`.
+
+The game paints these in one base colour and recolours them with its `hsv` shader (a hue turn,
+chroma scale and value scale in YIQ space), using a material per frame colour or per rarity. The
+CLI applies the same arithmetic to each piece, so the files are already coloured; a piece whose
+material is missing is left unmapped rather than written in the wrong colour. Trimmed sprite
+margins are restored, so every piece has the size the card scene lays out. `--sizes` does not
+apply to them: each is written at 1/4, 1/2 and 1x of its texture (the textures are 2x the game's
+300x422 card).
+
+The manifest gains a top-level `cardLayout` (`{ w: 300, h: 422, boxes: { portrait, frame,
+portraitBorder, banner, title, plaque, orb, star, text } }`), read from the game's card scene: each
+box in card pixels from the frame's top left, with `fontSize` for text. Spire UI's `GameCard`
+composes the pieces with it.
+
 `gameVersion` comes from the `release_info.json` Steam installs beside the pack (or one inside the
 pack, if a future build moves it there), else `unknown`.
 
@@ -113,7 +138,10 @@ example `"target"` for the few cards whose target is decided at runtime).
 
 `description` and `upgradedDescription` are the card's English text rendered with these numbers
 as plain text (markup removed; energy and star icons written as `2 Energy`, `1 Star`; numbers that
-only exist in combat shown as `X`). The item's own `description` is unchanged (numbers as `X`).
+only exist in combat shown as `X`). `descriptionRuns` and `upgradedDescriptionRuns` are the same
+text as styled runs with line breaks kept: `{ "text": "7", "style": "upgraded" }`, where `style` is
+`number` (a number the game colours), `upgraded` (one the upgrade changed) or the game's colour
+tags `gold`, `blue`, `purple`. The item's own `description` is unchanged (numbers as `X`).
 
 Stats ride on the card items, so a card needs its art to appear in the manifest; there is no
 stats-only mode (pass a single small `--sizes` if you only want the stats). If `sts2.dll` is missing,

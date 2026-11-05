@@ -46,15 +46,38 @@ describe("card text", () => {
     expect(renderCardText("Gain [gold]{Block}[/gold] [blue]Block[/blue].\n  Then [purple]rest[/purple].", c).text).toBe("Gain 5 Block. Then rest.");
   });
 
+  test("runs keep line breaks, the game's colour tags and its coloured numbers, upgraded ones marked", () => {
+    const c = ctx({ Damage: { base: 6, upgraded: 9 }, Weak: { base: 1 } });
+    const t = "Deal {Damage:diff()} damage.\n  Apply {Weak:diff()} [gold]Weak[/gold]. [blue]{Weak}[/blue]";
+    expect(renderCardText(t, c).runs).toEqual([
+      { text: "Deal " },
+      { text: "6", style: "number" },
+      { text: " damage.\nApply " },
+      { text: "1", style: "number" },
+      { text: " " },
+      { text: "Weak", style: "gold" },
+      { text: ". " },
+      { text: "1", style: "blue" },
+    ]);
+    const up = renderCardText(t, { ...c, upgraded: true });
+    expect(up.runs.filter((r) => r.style === "upgraded" || r.style === "number")).toEqual([
+      { text: "9", style: "upgraded" },
+      { text: "1", style: "number" },
+    ]);
+    expect(up.text).toBe("Deal 9 damage. Apply 1 Weak. 1");
+    // A diff value inside a colour tag takes the innermost style; stray marker characters are dropped.
+    expect(renderCardText("[gold]{Damage:diff()} x\u0001g[/gold]", c).runs).toEqual([{ text: "6", style: "number" }, { text: " xg", style: "gold" }]);
+  });
+
   test("computed vars show their base when known, else X; unknown vars are reported", () => {
     const c = ctx({ Calc: { computed: true }, Base: { base: 4, computed: true } });
-    expect(renderCardText("Deal {Calc:diff()} and {Base}.", c)).toEqual({ text: "Deal X and 4.", unresolved: [] });
-    expect(renderCardText("Deal {Missing:diff()} {Missing:plural:time|times}.{Rider: Extra.|}", c)).toEqual({ text: "Deal X times.", unresolved: ["Missing", "Rider"] });
+    expect(renderCardText("Deal {Calc:diff()} and {Base}.", c)).toMatchObject({ text: "Deal X and 4.", unresolved: [] });
+    expect(renderCardText("Deal {Missing:diff()} {Missing:plural:time|times}.{Rider: Extra.|}", c)).toMatchObject({ text: "Deal X times.", unresolved: ["Missing", "Rider"] });
   });
 
   test("malformed templates render nothing rather than garbage", () => {
-    expect(renderCardText("Deal {Damage", ctx({}))).toEqual({ text: "", unresolved: ["<template>"] });
-    expect(renderCardText("{a b}", ctx({}))).toEqual({ text: "", unresolved: ["<template>"] });
+    expect(renderCardText("Deal {Damage", ctx({}))).toEqual({ text: "", runs: [], unresolved: ["<template>"] });
+    expect(renderCardText("{a b}", ctx({}))).toEqual({ text: "", runs: [], unresolved: ["<template>"] });
     expect(renderCardText("{X:energyIcons(abc)}", ctx({})).unresolved).toEqual(["<template>"]);
     const deep = `${"{IfUpgraded:show:".repeat(40)}x${"}".repeat(40)}`;
     expect(renderCardText(deep, ctx({}, { upgraded: true })).unresolved).toEqual(["<template>"]);

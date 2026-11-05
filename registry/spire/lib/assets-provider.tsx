@@ -52,6 +52,11 @@ export function SpireAssets(props: { base: string; manifest?: SpireManifest; man
   return <SpireAssetsContext.Provider value={value}>{children}</SpireAssetsContext.Provider>;
 }
 
+/** The loaded manifest (null while loading or without one) and the art base URL. */
+export function useSpireManifest(): { base: string; manifest: SpireManifest | null } {
+  return useContext(SpireAssetsContext);
+}
+
 export function useSpireAsset(id: string): Resolved {
   const { base, manifest } = useContext(SpireAssetsContext);
   return useMemo(() => resolveAsset(id, manifest, base), [id, manifest, base]);

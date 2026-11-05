@@ -431,6 +431,29 @@
       ]
     },
     {
+      "name": "spire-game-card",
+      "type": "registry:ui",
+      "title": "GameCard",
+      "description": "A card drawn like the game's: frame, banner, energy orb, type plaque and text panel from your locally extracted UI.CARD_* pieces, falling back to CardFrame without them.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-card-frame.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-assets.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-icons.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/game-card.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/game-card.tsx"
+        }
+      ]
+    },
+    {
       "name": "spire-map-node",
       "type": "registry:ui",
       "title": "MapNode",

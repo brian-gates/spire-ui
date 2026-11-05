@@ -734,11 +734,17 @@ export function toCardStats(f: CardFacts, template: string | undefined): CardSta
   if (template !== undefined) {
     const ctx = { vars: f.vars, type: f.type, ...(f.target ? { target: f.target } : {}) };
     const base = renderCardText(template, { ...ctx, upgraded: false });
-    if (base.text) out.description = base.text;
+    if (base.text) {
+      out.description = base.text;
+      out.descriptionRuns = base.runs;
+    }
     let unresolved = base.unresolved.length > 0;
     if (f.upgradable) {
       const up = renderCardText(template, { ...ctx, upgraded: true });
-      if (up.text) out.upgradedDescription = up.text;
+      if (up.text) {
+        out.upgradedDescription = up.text;
+        out.upgradedDescriptionRuns = up.runs;
+      }
       unresolved ||= up.unresolved.length > 0;
     }
     if (unresolved) unknown.push("description");

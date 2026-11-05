@@ -23,6 +23,8 @@ describe("card facts from IL", () => {
       vars: { Damage: { base: 6, upgraded: 9 } },
       description: "Bonk for 6.",
       upgradedDescription: "Bonk for 9.",
+      descriptionRuns: [{ text: "Bonk for " }, { text: "6", style: "number" }, { text: "." }],
+      upgradedDescriptionRuns: [{ text: "Bonk for " }, { text: "9", style: "upgraded" }, { text: "." }],
     });
   });
 
@@ -72,7 +74,7 @@ describe("card facts from IL", () => {
     expect(f.unknown).toEqual(["target", "keywords", "vars", "upgrade"]);
     expect(f.reasons.join("; ")).toMatch(/opcode 0x6/);
     const s = toCardStats(f, "Gain {Block:diff()} Block.");
-    expect(s).toEqual({ cost: 1, type: "Skill", rarity: "Common", pool: "crimson", frame: "frame_crimson", description: "Gain X Block.", unknown: ["target", "keywords", "vars", "upgrade", "description"] });
+    expect(s).toEqual({ cost: 1, type: "Skill", rarity: "Common", pool: "crimson", frame: "frame_crimson", description: "Gain X Block.", descriptionRuns: [{ text: "Gain " }, { text: "X", style: "number" }, { text: " Block." }], unknown: ["target", "keywords", "vars", "upgrade", "description"] });
   });
 
   test("a constructor that is not the plain pattern gives no stats; unplayable and unpooled cards", () => {
@@ -84,6 +86,7 @@ describe("card facts from IL", () => {
       rarity: "Curse",
       target: "None",
       description: "Unplayable.",
+      descriptionRuns: [{ text: "Unplayable." }],
       unknown: ["pool"],
     });
   });

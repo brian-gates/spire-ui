@@ -11,8 +11,11 @@
 //   {Var:cond:>1?a|b} {Var:cond:a|b}   comparisons / truthiness
 //   {Var:choose(A|B|C):a|b|c|other}    match a string value
 //   {Flag:a|b}                    implicit conditional on a boolean
-// Templates nest. Markup tags ([gold]...[/gold] etc.) are removed and whitespace collapsed, as in
-// the manifest's other descriptions; nothing is passed through as markup.
+// Templates nest. For `text`, markup tags ([gold]...[/gold] etc.) are removed and whitespace
+// collapsed, as in the manifest's other descriptions; nothing is passed through as markup. `runs`
+// is the same text as styled runs, line breaks kept: the game's colour tags (gold, blue, purple)
+// and the numbers it colours (diff/inverseDiff values), marked "upgraded" when the upgrade changed
+// the value.
 
 import { stripMarkup } from "./godot";
 
@@ -31,8 +34,15 @@ export interface TextContext {
   target?: string;
 }
 
+/** A run of card text: plain, a number the game colours, or one of its colour tags. */
+export interface TextRun {
+  text: string;
+  style?: "number" | "upgraded" | "gold" | "blue" | "purple";
+}
+
 export interface RenderedText {
   text: string;
+  runs: TextRun[];
   /** Placeholders that could not be resolved (rendered as "X" or a default branch). */
   unresolved: string[];
 }
@@ -81,6 +91,40 @@ export function formatNumber(n: number): string {
   return String(Number(n.toFixed(2)));
 }
 
+// Style markers in the rendered string, turned into runs at the end: OPEN + style code ... CLOSE.
+const OPEN = "\u0001";
+const CLOSE = "\u0002";
+const STYLE_CODES: Record<string, NonNullable<TextRun["style"]>> = { n: "number", u: "upgraded", g: "gold", b: "blue", p: "purple" };
+const TAG_CODES: Record<string, string> = { gold: "g", blue: "b", purple: "p" };
+
+/** Splits a marked string into runs, innermost style winning; unbalanced markers are ignored. */
+function toRuns(marked: string): TextRun[] {
+  const runs: TextRun[] = [];
+  const stack: string[] = [];
+  let buf = "";
+  const flush = () => {
+    if (!buf) return;
+    const style = stack.length ? STYLE_CODES[stack[stack.length - 1]!] : undefined;
+    const last = runs[runs.length - 1];
+    if (last && last.style === style) last.text += buf;
+    else runs.push(style ? { text: buf, style } : { text: buf });
+    buf = "";
+  };
+  for (let i = 0; i < marked.length; i++) {
+    const c = marked[i]!;
+    if (c === OPEN) {
+      flush();
+      const code = marked[++i];
+      if (code !== undefined) stack.push(code);
+    } else if (c === CLOSE) {
+      flush();
+      stack.pop();
+    } else buf += c;
+  }
+  flush();
+  return runs;
+}
+
 const truthy = (v: Value) => (typeof v === "number" ? v !== 0 : typeof v === "boolean" ? v : typeof v === "string" ? v.length > 0 : v !== null);
 
 export function renderCardText(template: string, ctx: TextContext): RenderedText {
@@ -88,13 +132,19 @@ export function renderCardText(template: string, ctx: TextContext): RenderedText
   let out: string;
   try {
     if (template.length > MAX_TEMPLATE) throw new TemplateError("template too long");
-    out = render(template, ctx, null, 0, unresolved);
+    // Marker characters in the template itself would be read as styles; drop them first.
+    out = render(template.replace(/[\u0001\u0002]/g, ""), ctx, null, 0, unresolved);
   } catch (e) {
     if (!(e instanceof TemplateError)) throw e;
-    return { text: "", unresolved: ["<template>"] };
+    return { text: "", runs: [], unresolved: ["<template>"] };
   }
-  const text = stripMarkup(out).replace(/\s+/g, " ").trim();
-  return { text, unresolved: [...unresolved] };
+  const tagged = out.replace(/\[(\/?)(gold|blue|purple)\]/g, (_, close: string, tag: string) => (close ? CLOSE : OPEN + TAG_CODES[tag]));
+  const marked = stripMarkup(tagged)
+    .replace(/[^\S\n]+/g, " ")
+    .replace(/ ?\n[\s]*/g, "\n")
+    .trim();
+  const text = marked.replace(/\u0001./g, "").replaceAll(CLOSE, "").replace(/\s+/g, " ").trim();
+  return { text, runs: toRuns(marked), unresolved: [...unresolved] };
 }
 
 function lookup(name: string, ctx: TextContext, current: Value, unresolved: Set<string>): Value {
@@ -143,7 +193,7 @@ function placeholder(body: string, before: string, ctx: TextContext, current: Va
   const value = lookup(selector, ctx, current, unresolved);
   const rest = colon < 0 ? null : body.slice(colon + 1);
   const sub = (option: string | undefined, v: Value) => (option === undefined ? "" : render(option, ctx, v, depth + 1, unresolved));
-  const afterDigit = /\d$/.test(before);
+  const afterDigit = /\d\u0002*$/.test(before);
 
   let name: string | null = null;
   let args: string | null = null;
@@ -173,8 +223,11 @@ function placeholder(body: string, before: string, ctx: TextContext, current: Va
         return sub(truthy(value) ? opts[0] : opts[1], value);
       }
     case "diff":
-    case "inverseDiff":
-      return numberText(value);
+    case "inverseDiff": {
+      const v = Object.hasOwn(ctx.vars, selector) ? ctx.vars[selector] : undefined;
+      const changed = ctx.upgraded && v?.upgraded !== undefined && v.base !== undefined && v.upgraded !== v.base;
+      return `${OPEN}${changed ? "u" : "n"}${numberText(value)}${CLOSE}`;
+    }
     case "energyIcons": {
       const fixed = args !== null && args !== "" ? Number(args) : null;
       if (fixed !== null && !(Number.isInteger(fixed) && fixed >= 0 && fixed < 100)) throw new TemplateError("bad energyIcons count");

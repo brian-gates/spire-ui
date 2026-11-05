@@ -52,7 +52,7 @@ Without a game-art manifest every icon uses the kit's original fallback set.
 
 Primitives: Badge, Banner, Button, Dialog, Divider, Panel, SpireIcon, Tabs, Tooltip.
 
-Game components: CardFrame, ClassBadge, MapNode, PlayerRow, PotionSlots, RelicStrip, RunHeader, RunRow, StatHP, StatGold, StatEnergy, StatDeck.
+Game components: CardFrame, GameCard, ClassBadge, MapNode, PlayerRow, PotionSlots, RelicStrip, RunHeader, RunRow, StatHP, StatGold, StatEnergy, StatDeck.
 
 Each component page in the docs lists its own install command.
 

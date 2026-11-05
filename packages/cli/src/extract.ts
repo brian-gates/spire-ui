@@ -8,6 +8,7 @@ import { randomBytes } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import sharp, { type Sharp } from "sharp";
+import { CARD_PIECES, type CardLayout, type Hsv, hsvTint, parseCardLayout, parseHsvMaterial, pieceBoxes } from "./card-pieces";
 import { type CardFacts, readCards, toCardStats, UnsupportedBuildError } from "./card-stats";
 import { CtexError, decodeCtex } from "./ctex";
 import { Assembly, DotnetError, MAX_ASSEMBLY } from "./dotnet/metadata";
@@ -65,6 +66,8 @@ export interface TextureRef {
   entry: PckEntry;
   /** Sprite region of an atlas, in the decoded texture's pixels. */
   region?: Rect;
+  /** The sprite's trimmed transparent margin (see parseAtlasTres); only card pieces restore it. */
+  margin?: Rect;
 }
 
 export interface MappedId {
@@ -76,6 +79,8 @@ export interface MappedId {
   description?: string;
   /** The raw localization description (cards only), for rendering with the card's numbers. */
   template?: string;
+  /** A card piece (see card-pieces.ts): drawn at card scale, margin restored, tinted when `tint` is set. */
+  piece?: { tint?: Hsv };
 }
 
 interface FixedId {
@@ -225,7 +230,7 @@ export async function mapIds(index: PckIndex, read: (e: PckEntry) => Promise<Buf
         const tres = await text(s.sprite);
         const sprite = tres === null ? null : parseAtlasTres(tres);
         const entry = sprite && (await resolveImage(sprite.atlas));
-        if (sprite && entry) return { entry, region: sprite.region };
+        if (sprite && entry) return { entry, region: sprite.region, ...(sprite.margin ? { margin: sprite.margin } : {}) };
       }
     }
     return null;
@@ -273,7 +278,35 @@ export async function mapIds(index: PckIndex, read: (e: PckEntry) => Promise<Buf
     const description = f.description ? (await loc(f.description[0]))?.get(f.description[1]) : undefined;
     await add(f.id, f.kind, slug, f.sources, title, description);
   }
+
+  if (want.has("ui")) {
+    // A piece whose material is missing or not the hsv shader is left unmapped: drawn untinted it
+    // would be the wrong colour, so pages fall back to their own frame instead.
+    const materials = new Map<string, Hsv | null>();
+    for (const p of CARD_PIECES) {
+      let tint: Hsv | undefined;
+      if (p.material) {
+        if (!materials.has(p.material)) {
+          const t = await text(p.material);
+          materials.set(p.material, t === null ? null : parseHsvMaterial(t));
+        }
+        tint = materials.get(p.material) ?? undefined;
+      }
+      const texture = p.material && !tint ? null : await resolve([p.source]);
+      out.set(p.id, { kind: "ui", slug: p.slug, texture, piece: tint ? { tint } : {} });
+    }
+  }
   return out;
+}
+
+/** The card scene's layout (see card-pieces.ts), or null when the scene is missing or unreadable. */
+export async function readCardLayout(index: PckIndex, read: (e: PckEntry) => Promise<Buffer>): Promise<CardLayout | null> {
+  const entry = index.entries.find((e) => e.path === "scenes/cards/card.tscn");
+  if (!entry || entry.size > 4n * 1024n * 1024n) return null;
+  const data = await read(entry);
+  // A binary (RSCC-compressed or .scn) scene is not something this reader understands.
+  if (data.subarray(0, 4).toString("latin1") !== "[gd_") return null;
+  return parseCardLayout(data.toString("utf8"));
 }
 
 // --- output ----------------------------------------------------------------------------------
@@ -435,6 +468,9 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
   const version = await gameVersion(o.pck, index);
   const read = (e: PckEntry) => readPckFile(o.pck, e);
   const mapped = await mapIds(index, read, o.kinds);
+  const cardLayout = o.kinds.includes("ui") ? await readCardLayout(index, read) : null;
+  const hasPieces = [...mapped.values()].some((m) => m.piece && m.texture);
+  if (hasPieces && !cardLayout) o.warn?.("card layout not found: scenes/cards/card.tscn is missing or not a scene this version reads");
   const cardFacts = o.kinds.includes("card") && o.assembly !== null ? loadCardFacts(o.assembly ?? findAssembly(o.pck), o.warn) : null;
   const withUnknown: string[] = [];
   let cardStats = 0;
@@ -475,13 +511,33 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
       for (const [id, m] of ids) {
         const r = m.texture!.region;
         if (r && (r.x + r.w > w || r.y + r.h > h)) throw new ExtractError("corrupt", `${id}: sprite region lies outside its ${w}x${h} atlas`);
-        const sw = r ? r.w : w;
-        const sh = r ? r.h : h;
+        let sw = r ? r.w : w;
+        let sh = r ? r.h : h;
+        let render = (): Sharp => {
+          const img = source();
+          return r ? img.extract({ left: r.x, top: r.y, width: r.w, height: r.h }) : img;
+        };
+        let boxes = plannedBoxes(sizes, sw, sh);
+        if (m.piece) {
+          // Card pieces: tinted once at full size, transparent margin restored so every piece keeps
+          // the size the card scene lays out, then written at card scales.
+          const raw = await render().ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+          if (m.piece.tint) hsvTint(raw.data, m.piece.tint);
+          const mg = m.texture!.margin;
+          let img = sharp(raw.data, { raw: { width: raw.info.width, height: raw.info.height, channels: 4 } });
+          if (mg) {
+            img = img.extend({ left: mg.x, top: mg.y, right: mg.w - mg.x, bottom: mg.h - mg.y, background: { r: 0, g: 0, b: 0, alpha: 0 } });
+            sw += mg.w;
+            sh += mg.h;
+          }
+          const full = await img.raw().toBuffer({ resolveWithObject: true });
+          render = () => sharp(full.data, { raw: { width: full.info.width, height: full.info.height, channels: 4 } });
+          boxes = pieceBoxes(sw, sh);
+        }
         // Rendered per box, keyed by actual width: two boxes that round to the same width keep the larger.
         const byWidth = new Map<number, { data: Buffer; width: number; height: number }>();
-        for (const box of plannedBoxes(sizes, sw, sh)) {
-          let img = source();
-          if (r) img = img.extract({ left: r.x, top: r.y, width: r.w, height: r.h });
+        for (const box of boxes) {
+          const img = render();
           const { data, info } = await img
             .resize({ width: box, height: box, fit: "inside", withoutEnlargement: true })
             .webp({ quality: 82, alphaQuality: 90, effort: 5 })
@@ -542,6 +598,7 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
       sizes,
       items: sortedItems,
       ...(fontFiles.length ? { fonts } : {}),
+      ...(cardLayout ? { cardLayout } : {}),
     };
     write(confined(staging, "manifest.json"), Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`));
     write(confined(staging, MARKER), Buffer.from(MARKER_TEXT));

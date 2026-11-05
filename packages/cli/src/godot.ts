@@ -24,14 +24,22 @@ export interface Rect {
   h: number;
 }
 
-/** An AtlasTexture `.tres`: which atlas image (pack path) and which region of it. */
-export function parseAtlasTres(text: string): { atlas: string; region: Rect } | null {
+/**
+ * An AtlasTexture `.tres`: which atlas image (pack path), which region of it, and its `margin` when
+ * set: the packer trimmed transparent edges, and the texture's full size is the region's plus
+ * margin.w x margin.h, with the region drawn at margin.x, margin.y.
+ */
+export function parseAtlasTres(text: string): { atlas: string; region: Rect; margin?: Rect } | null {
   const atlas = /\[ext_resource [^\]]*path="res:\/\/([^"]+)"/.exec(text)?.[1];
   const r = /^region = Rect2\(([\d.]+), ([\d.]+), ([\d.]+), ([\d.]+)\)/m.exec(text);
   if (!atlas || !r) return null;
   const [x, y, w, h] = r.slice(1, 5).map((v) => Math.round(Number(v))) as [number, number, number, number];
   if (![x, y, w, h].every(Number.isSafeInteger) || w <= 0 || h <= 0) return null;
-  return { atlas, region: { x, y, w, h } };
+  const m = /^margin = Rect2\(([\d.]+), ([\d.]+), ([\d.]+), ([\d.]+)\)/m.exec(text);
+  const margin = m ? (m.slice(1, 5).map((v) => Math.round(Number(v))) as [number, number, number, number]) : null;
+  // A margin is at most a few transparent pixels per side; anything huge is not one to honour.
+  const okMargin = margin && margin.every((v) => Number.isSafeInteger(v) && v >= 0 && v <= 4096) && margin[0] <= margin[2] && margin[1] <= margin[3];
+  return { atlas, region: { x, y, w, h }, ...(okMargin ? { margin: { x: margin[0], y: margin[1], w: margin[2], h: margin[3] } } : {}) };
 }
 
 /**

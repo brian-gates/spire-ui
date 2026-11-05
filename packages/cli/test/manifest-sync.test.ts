@@ -34,6 +34,8 @@ const fixture = {
         vars: { Damage: { base: 5, upgraded: 8 }, CalculatedDamage: { computed: true } },
         description: "Bonk for 5.",
         upgradedDescription: "Bonk for 8.",
+        descriptionRuns: [{ text: "Bonk for " }, { text: "5", style: "number" }, { text: "." }],
+        upgradedDescriptionRuns: [{ text: "Bonk for " }, { text: "8", style: "upgraded" }, { text: "\n" }, { text: "Fleeting", style: "gold" }],
         unknown: ["target"],
       },
     },
@@ -43,6 +45,7 @@ const fixture = {
     "STAT.X": { kind: "ui", file: "ui/x@64.webp", w: 64, h: 64 },
   },
   fonts: { display: "fonts/a.ttf", body: "fonts/b.ttf" },
+  cardLayout: { w: 300, h: 422, boxes: { frame: { x: 0, y: 0, w: 300, h: 422 }, title: { x: 45, y: 7, w: 210, h: 54, fontSize: 26 } } },
 } satisfies CliManifest;
 
 const asCli: CliManifest = fixture;

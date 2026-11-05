@@ -5,6 +5,10 @@ export type AssetKind = "relic" | "potion" | "card" | "class" | "room" | "ui";
 export interface CardVar {
   base?: number; upgraded?: number; computed?: boolean;
 }
+/** A run of card text: plain, a number the game colours ("upgraded" when the upgrade changed it), or a game colour tag. */
+export interface CardTextRun {
+  text: string; style?: "number" | "upgraded" | "gold" | "blue" | "purple";
+}
 /** A card's stats, read from the game's code. Fields that could not be read are left out and named in `unknown`. */
 export interface CardStats {
   /** Energy cost; "X" for X-cost cards, null for unplayable ones. */
@@ -13,6 +17,8 @@ export interface CardStats {
   keywords?: string[]; upgradedKeywords?: string[];
   vars?: Record<string, CardVar>;
   description?: string; upgradedDescription?: string;
+  /** The descriptions as styled runs, line breaks kept (`\n`). */
+  descriptionRuns?: CardTextRun[]; upgradedDescriptionRuns?: CardTextRun[];
   unknown?: string[];
 }
 export interface ManifestItem {
@@ -24,10 +30,22 @@ export interface ManifestItem {
   widths?: number[];
   card?: CardStats;
 }
+/** A box in the game's card scene, in its pixels from the frame's top left; `fontSize` for text. */
+export interface CardLayoutBox {
+  x: number; y: number; w: number; h: number; fontSize?: number;
+}
+/**
+ * The game's card layout: frame size (300 x 422) and boxes by name (frame, portrait, portraitBorder,
+ * banner, title, plaque, orb, star, text), read from its card scene alongside the UI.CARD_* pieces.
+ */
+export interface CardLayout {
+  w: number; h: number; boxes: Record<string, CardLayoutBox>;
+}
 export interface SpireManifest {
   schemaVersion: 1; gameVersion: string; generatedAt: string;
   items: Record<string, ManifestItem>;
   fonts?: { display?: string; body?: string };
+  cardLayout?: CardLayout;
 }
 export type Resolved =
   | {
@@ -101,6 +119,15 @@ const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFin
 const isStr = (v: unknown): v is string => typeof v === "string";
 const strings = (v: unknown): string[] | undefined => (Array.isArray(v) && v.every(isStr) ? [...v] : undefined);
 
+const RUN_STYLES: ReadonlySet<string> = new Set(["number", "upgraded", "gold", "blue", "purple"]);
+/** Text runs if every entry is { text: string, style?: known style }; else undefined. Unknown styles become plain. */
+function textRuns(v: unknown): CardTextRun[] | undefined {
+  if (!Array.isArray(v) || !v.every((r) => isObj(r) && isStr(r.text))) return undefined;
+  return (v as Record<string, unknown>[]).map((r) =>
+    isStr(r.style) && RUN_STYLES.has(r.style) ? { text: r.text as string, style: r.style as CardTextRun["style"] } : { text: r.text as string },
+  );
+}
+
 /** A manifest item's `card`, keeping only well-typed fields; null without a valid cost, type and rarity. */
 function parseCardStats(v: unknown): CardStats | null {
   if (!isObj(v)) return null;
@@ -112,6 +139,10 @@ function parseCardStats(v: unknown): CardStats | null {
   for (const k of ["target", "pool", "frame", "description", "upgradedDescription"] as const) if (isStr(v[k])) out[k] = v[k];
   for (const k of ["keywords", "upgradedKeywords", "unknown"] as const) {
     const list = strings(v[k]);
+    if (list) out[k] = list;
+  }
+  for (const k of ["descriptionRuns", "upgradedDescriptionRuns"] as const) {
+    const list = textRuns(v[k]);
     if (list) out[k] = list;
   }
   if (isObj(v.vars)) {
@@ -146,5 +177,20 @@ export function parseManifest(json: unknown): SpireManifest | null {
     else delete clean.card;
     items[id] = clean;
   }
-  return { ...(json as unknown as SpireManifest), items };
+  const out = { ...(json as unknown as SpireManifest), items };
+  const layout = parseCardLayout(json.cardLayout);
+  if (layout) out.cardLayout = layout;
+  else delete out.cardLayout;
+  return out;
+}
+
+/** A manifest's `cardLayout` if its size and every box are finite numbers (positive sizes); else null. */
+function parseCardLayout(v: unknown): CardLayout | null {
+  if (!isObj(v) || !isNum(v.w) || !isNum(v.h) || v.w <= 0 || v.h <= 0 || !isObj(v.boxes)) return null;
+  const boxes: Record<string, CardLayoutBox> = Object.create(null);
+  for (const [k, b] of Object.entries(v.boxes)) {
+    if (!isObj(b) || !isNum(b.x) || !isNum(b.y) || !isNum(b.w) || !isNum(b.h) || b.w <= 0 || b.h <= 0) continue;
+    boxes[k] = { x: b.x, y: b.y, w: b.w, h: b.h, ...(isNum(b.fontSize) && b.fontSize > 0 ? { fontSize: b.fontSize } : {}) };
+  }
+  return { w: v.w, h: v.h, boxes };
 }

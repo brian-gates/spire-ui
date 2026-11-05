@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { PlayerRow, type RunPlayerView } from "@spire/game/player-row";
 import { CardFrame } from "@spire/game/card-frame";
+import { GameCard } from "@spire/game/game-card";
 import { ClassBadge } from "@spire/game/class-badge";
 import { MapNode } from "@spire/game/map-node";
 import { PotionSlots } from "@spire/game/potion-slots";
@@ -217,6 +218,17 @@ export const COMPONENTS: ComponentDoc[] = [
         <CardFrame name="Strike" cost={1} type="attack" rarity="starter" character="CHARACTER.IRONCLAD" />
         <CardFrame name="Backflip" cost={1} type="skill" rarity="common" character="CHARACTER.SILENT" />
         <CardFrame name="Echo Form" cost={3} type="power" rarity="rare" character="CHARACTER.IRONCLAD" upgraded />
+      </div>
+    ),
+  },
+  {
+    slug: "game-card", name: "GameCard",
+    summary: "A card drawn the way the game draws it, from the frame, banner, orb and plaque pieces extract-art writes from your own game files, with the card's stats and text. Without those pieces it falls back to CardFrame, as here.",
+    usage: `<GameCard id="CARD.STRIKE_IRONCLAD" upgrades={1} width={240} className="w-60" />`,
+    Demo: () => (
+      <div className="flex flex-wrap gap-4">
+        <GameCard id="CARD.STRIKE_IRONCLAD" />
+        <GameCard id="CARD.STRIKE_IRONCLAD" upgrades={1} />
       </div>
     ),
   },
