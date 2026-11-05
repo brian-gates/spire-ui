@@ -45,6 +45,10 @@ export async function decodeCtex(buf: Buffer): Promise<{ png: Buffer; w: number;
   const ih = buf.readUInt16LE(42);
   const format = buf.readUInt32LE(48);
   if (w === 0 || h === 0) throw new CtexError("corrupt", "ctex has an empty size");
+  const checkStored = (sw: number, sh: number) => {
+    if (sw === 0 || sh === 0) throw new CtexError("corrupt", "ctex stores an empty image");
+    if (sw < w || sh < h) throw new CtexError("corrupt", `ctex stores ${sw}x${sh} for a ${w}x${h} texture`);
+  };
 
   let image: Sharp;
   let stored: { width: number; height: number };
@@ -62,10 +66,12 @@ export async function decodeCtex(buf: Buffer): Promise<{ png: Buffer; w: number;
     } catch (e) {
       throw new CtexError("corrupt", `ctex image data is not a readable ${dataFormat === DATA_FORMAT.PNG ? "PNG" : "WebP"}: ${(e as Error).message}`);
     }
+    checkStored(stored.width, stored.height);
     image = sharp(encoded);
   } else if (dataFormat === DATA_FORMAT.IMAGE) {
     const data = buf.subarray(HEADER_SIZE);
     stored = { width: iw, height: ih };
+    checkStored(iw, ih);
     const block = BLOCK_FORMATS[format];
     const channels = RAW_CHANNELS[format];
     if (block) {
@@ -83,9 +89,6 @@ export async function decodeCtex(buf: Buffer): Promise<{ png: Buffer; w: number;
     throw new CtexError("unsupported-format", `ctex data format ${dataFormat} is not supported`);
   }
 
-  if (stored.width < w || stored.height < h) {
-    throw new CtexError("corrupt", `ctex stores ${stored.width}x${stored.height} for a ${w}x${h} texture`);
-  }
   if (stored.width !== w || stored.height !== h) image = image.extract({ left: 0, top: 0, width: w, height: h });
   return { png: await image.png().toBuffer(), w, h };
 }

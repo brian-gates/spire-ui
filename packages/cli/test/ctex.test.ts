@@ -198,7 +198,11 @@ describe("decodeCtex", () => {
     expect(await code(decodeCtex(Buffer.from("nope")))).toBe("not-a-ctex");
     expect(await code(decodeCtex(Buffer.concat([ctexHeader({ w: 8, h: 8, dataFormat: DATA.IMAGE, format: FORMAT.BPTC_RGBA }), Buffer.alloc(16)])))).toBe("corrupt");
     expect(await code(decodeCtex(Buffer.concat([ctexHeader({ w: 4, h: 4, dataFormat: DATA.PNG, format: FORMAT.RGBA8 }), u32(1000), Buffer.alloc(10)])))).toBe("corrupt");
-    // Stored image smaller than the texture it claims to be.
+    // A zero stored size, even with enough bytes for the texture it claims to be.
+    expect(await code(decodeCtex(Buffer.concat([ctexHeader({ w: 4, h: 4, iw: 0, ih: 4, dataFormat: DATA.IMAGE, format: FORMAT.RGBA8 }), Buffer.alloc(64)])))).toBe("corrupt");
+    expect(await code(decodeCtex(Buffer.concat([ctexHeader({ w: 4, h: 4, iw: 4, ih: 0, dataFormat: DATA.IMAGE, format: FORMAT.BPTC_RGBA }), Buffer.alloc(16)])))).toBe("corrupt");
+    // Stored image smaller than the texture it claims to be, with data for the stored size.
+    expect(await code(decodeCtex(Buffer.concat([ctexHeader({ w: 4, h: 4, iw: 2, ih: 4, dataFormat: DATA.IMAGE, format: FORMAT.RGBA8 }), Buffer.alloc(32)])))).toBe("corrupt");
     expect(await code(decodeCtex(Buffer.concat([ctexHeader({ w: 8, h: 8, iw: 4, ih: 4, dataFormat: DATA.IMAGE, format: FORMAT.BPTC_RGBA }), Buffer.alloc(16)])))).toBe("corrupt");
   });
 });

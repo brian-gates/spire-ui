@@ -30,8 +30,9 @@ Test fixtures are generated in the tests from tiny synthetic images; no game fil
 
 - Block-compressed texture decoding (`src/bcn.ts`) is a TypeScript port of the BC1, BC3 and BC7
   decoders from [bcdec](https://github.com/iOrange/bcdec) by Sergii Kudlai, used under its MIT
-  licence (Copyright (c) 2022 Sergii Kudlai). The full licence text is reproduced at the top of
-  `src/bcn.ts`.
+  licence (Copyright (c) 2022 Sergii Kudlai). The full licence text is in
+  [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), which ships in the npm package, and is kept as
+  a legal comment in `src/bcn.ts` so it survives bundling into `dist/`.
 - Image encoding and WebP decoding use [sharp](https://sharp.pixelplumbing.com/) (Apache-2.0).
 
 ## Licence
