@@ -18,8 +18,9 @@ app serves, with a manifest.json for Spire UI's <SpireAssets>. Nothing is downlo
 
   --game-dir <dir>   folder with "${PCK_NAME}" (default: Steam's usual install folders)
   --out <dir>        output folder, replaced on each run (default: ./public/spire)
-  --sizes <list>     icon box sizes in px, e.g. 32,64 (default: 64)
-  --kinds <list>     any of ${ASSET_KINDS.join(",")} (default: ${DEFAULT_KINDS.join(",")})
+  --sizes <list>     icon box sizes in px, e.g. 64,256; never upscaled (default: 64)
+  --kinds <list>     any of ${ASSET_KINDS.join(",")} (default: ${DEFAULT_KINDS.join(",")});
+                     card also reads card stats and text from the game's code (sts2.dll)
   --fonts            also copy the game's fonts (for local use only)
   -h, --help         show this help`;
 
@@ -95,6 +96,13 @@ async function main(argv: string[]): Promise<number> {
     `spire-ui: extracted ${counts} at ${[...new Set(sizes)].sort((a, b) => a - b).join(",")}px from game ${s.gameVersion} into ${shown}; ` +
       `${s.unmapped.length} ids without art; ${s.files} files, ${mb(s.bytes)}, ${((Date.now() - started) / 1000).toFixed(1)}s`,
   );
+  if (s.cardStats) {
+    const u = s.cardStats.withUnknown;
+    console.log(
+      `spire-ui: card stats for ${s.cardStats.cards} cards from the game's code` +
+        (u.length ? `; ${u.length} with fields it could not read (${u.slice(0, 5).join(", ")}${u.length > 5 ? ", ..." : ""}), listed in each card's "unknown"` : ""),
+    );
+  }
   if (values.fonts) {
     console.log(
       s.fonts.length

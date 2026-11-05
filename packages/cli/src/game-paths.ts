@@ -72,3 +72,25 @@ export function findPck(dirOrFile: string): string | null {
   }
   return null;
 }
+
+/** The game's own code, a .NET assembly. */
+export const ASSEMBLY_NAME = "sts2.dll";
+
+/**
+ * The game's sts2.dll beside its pack: Steam puts it in a `data_sts2_<platform>_<arch>` folder next
+ * to the pack (one per architecture on macOS; their IL is the same). Null if none is there.
+ */
+export function findAssembly(pck: string): string | null {
+  const dir = path.dirname(pck);
+  let entries: string[];
+  try {
+    entries = fs.readdirSync(dir);
+  } catch {
+    return null;
+  }
+  for (const name of entries.filter((e) => /^data_sts2_[A-Za-z0-9_]+$/.test(e)).sort()) {
+    const candidate = path.join(dir, name, ASSEMBLY_NAME);
+    if (isFile(candidate)) return candidate;
+  }
+  return null;
+}

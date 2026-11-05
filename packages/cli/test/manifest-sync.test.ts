@@ -15,12 +15,35 @@ const fixture = {
     "RELIC.ANCHOR": { kind: "relic", file: "relic/anchor@64.webp", w: 64, h: 64, name: "Anchor", description: "Text." },
     "POTION.X": { kind: "potion", file: "potion/x@64.webp", w: 40, h: 48 },
     "CARD.X": { kind: "card", file: "card/x@64.webp", w: 64, h: 48 },
+    "CARD.Y": {
+      kind: "card",
+      file: "card/y@64.webp",
+      w: 64,
+      h: 48,
+      card: {
+        cost: "X",
+        upgradedCost: 0,
+        starCost: 2,
+        type: "Attack",
+        rarity: "Common",
+        target: "AnyEnemy",
+        pool: "ironclad",
+        frame: "card_frame_red",
+        keywords: ["Exhaust"],
+        upgradedKeywords: [],
+        vars: { Damage: { base: 5, upgraded: 8 }, CalculatedDamage: { computed: true } },
+        description: "Deal 5 damage.",
+        upgradedDescription: "Deal 8 damage.",
+        unknown: ["target"],
+      },
+    },
+    "CARD.Z": { kind: "card", file: "card/z@64.webp", w: 64, h: 48, card: { cost: null, type: "Curse", rarity: "Curse" } },
     "CHARACTER.X": { kind: "class", file: "class/x@64.webp", w: 64, h: 64 },
     "ROOM.X": { kind: "room", file: "room/x@64.webp", w: 64, h: 64 },
     "STAT.X": { kind: "ui", file: "ui/x@64.webp", w: 64, h: 64 },
   },
   fonts: { display: "fonts/a.ttf", body: "fonts/b.ttf" },
-} as const;
+} satisfies CliManifest;
 
 const asCli: CliManifest = fixture;
 const asRegistry: RegistryManifest = fixture;
@@ -30,6 +53,7 @@ const registryToCli: CliManifest = asRegistry;
 type Same<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 const same: Same<CliManifest, RegistryManifest> = true;
 const sameItem: Same<CliManifest["items"][string], RegistryManifest["items"][string]> = true;
+const sameCard: Same<NonNullable<CliManifest["items"][string]["card"]>, NonNullable<RegistryManifest["items"][string]["card"]>> = true;
 
 describe("SpireManifest copies", () => {
   test("the CLI's copy and the resolver's copy are the same type", () => {
@@ -41,7 +65,7 @@ describe("SpireManifest copies", () => {
     } catch (e) {
       throw new Error(`the manifest copies differ:\n${(e as { stdout?: string }).stdout ?? String(e)}`);
     }
-    expect([same, sameItem]).toEqual([true, true]);
+    expect([same, sameItem, sameCard]).toEqual([true, true, true]);
     expect(parseManifest(cliToRegistry)).toEqual(cliToRegistry);
     expect(registryToCli.schemaVersion).toBe(1);
   });

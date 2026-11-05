@@ -73,6 +73,53 @@ describe("parseManifest", () => {
     expect(Object.hasOwn(parsed!.items, "__proto__")).toBe(true);
     expect(({} as Record<string, unknown>).file).toBeUndefined();
   });
+  it("keeps a card's well-typed stats and drops the rest", () => {
+    const item = { kind: "card", file: "c.webp", w: 2, h: 1 };
+    const parsed = parseManifest({
+      ...manifest,
+      items: {
+        "CARD.A": {
+          ...item,
+          card: {
+            cost: "X",
+            upgradedCost: "1",
+            starCost: 2,
+            type: "Attack",
+            rarity: "Common",
+            target: 3,
+            pool: "ironclad",
+            keywords: ["Exhaust", 5],
+            upgradedKeywords: ["Retain"],
+            vars: { Damage: { base: 5, upgraded: 8 }, Calc: { computed: true, base: "7" }, Bad: 4 },
+            description: "Deal 5 damage.",
+            upgradedDescription: ["no"],
+            unknown: ["target"],
+            extra: "ignored",
+          },
+        },
+        "CARD.B": { ...item, card: { cost: 1, type: "Skill" } },
+        "CARD.C": { ...item, card: { cost: Number.NaN, type: "Skill", rarity: "Rare" } },
+        "CARD.D": { ...item, card: { cost: null, type: "Curse", rarity: "Curse" } },
+      },
+    });
+    expect(parsed!.items["CARD.A"]!.card).toEqual({
+      cost: "X",
+      starCost: 2,
+      type: "Attack",
+      rarity: "Common",
+      pool: "ironclad",
+      upgradedKeywords: ["Retain"],
+      vars: { Damage: { base: 5, upgraded: 8 }, Calc: { computed: true } },
+      description: "Deal 5 damage.",
+      unknown: ["target"],
+    });
+    // Without a valid cost, type and rarity the card stats are dropped; the item (its art) stays.
+    expect(parsed!.items["CARD.B"]).toEqual(item);
+    expect(parsed!.items["CARD.C"]).toEqual(item);
+    expect(parsed!.items["CARD.D"]!.card).toEqual({ cost: null, type: "Curse", rarity: "Curse" });
+    expect(resolveAsset("CARD.A", parsed, "/art")).toMatchObject({ source: "extracted", card: { cost: "X" } });
+    expect(resolveAsset("CARD.B", parsed, "/art")).not.toHaveProperty("card");
+  });
   it("accepts valid", () => expect(parseManifest(manifest)).toEqual(manifest));
   it("rejects bad", () => {
     expect(parseManifest({ schemaVersion: 2 })).toBeNull();

@@ -8,7 +8,11 @@ import { randomBytes } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import sharp, { type Sharp } from "sharp";
+import { type CardFacts, readCards, toCardStats, UnsupportedBuildError } from "./card-stats";
 import { CtexError, decodeCtex } from "./ctex";
+import { Assembly, DotnetError, MAX_ASSEMBLY } from "./dotnet/metadata";
+import { Model } from "./dotnet/model";
+import { findAssembly } from "./game-paths";
 import { embeddedSfnt, importTarget, parseAtlasTres, plainText, type Rect, unwrapRscc } from "./godot";
 import { ASSET_KINDS, type AssetKind, type ManifestItem, type SpireManifest } from "./manifest";
 import { type PckEntry, type PckIndex, readPckFile, readPckIndex } from "./pck";
@@ -50,6 +54,8 @@ export interface MappedId {
   texture: TextureRef | null;
   name?: string;
   description?: string;
+  /** The raw localization description (cards only), for rendering with the card's numbers. */
+  template?: string;
 }
 
 interface FixedId {
@@ -210,7 +216,8 @@ export async function mapIds(index: PckIndex, read: (e: PckEntry) => Promise<Buf
   const add = async (id: string, kind: AssetKind, slug: string, sources: Source[], title?: string, description?: string) => {
     const name = title === undefined ? undefined : plainText(title) || undefined;
     const desc = description === undefined ? undefined : plainText(description) || undefined;
-    out.set(id, { kind, slug, texture: await resolve(sources), ...(name ? { name } : {}), ...(desc ? { description: desc } : {}) });
+    const template = kind === "card" && description !== undefined ? { template: description } : {};
+    out.set(id, { kind, slug, texture: await resolve(sources), ...(name ? { name } : {}), ...(desc ? { description: desc } : {}), ...template });
   };
 
   for (const c of COLLECTIONS) {
@@ -341,6 +348,11 @@ function checkReplaceable(out: string): void {
 export interface ExtractOptions {
   /** The game's .pck file. */
   pck: string;
+  /**
+   * The game's sts2.dll, read for card stats when `kinds` has "card". Default: found beside the
+   * pack; null: do not read card stats.
+   */
+  assembly?: string | null;
   out: string;
   /** Box sizes in pixels; the largest is the manifest's `file`. */
   sizes: number[];
@@ -358,6 +370,32 @@ export interface ExtractSummary {
   fonts: string[];
   files: number;
   bytes: number;
+  /** Card stats written (null when cards were not extracted or the game's code was unreadable). */
+  cardStats: { cards: number; withUnknown: string[] } | null;
+}
+
+/**
+ * Card facts from the game's code, or null (with a warning) when it is missing or not a build this
+ * reader understands. Card art never depends on it.
+ */
+function loadCardFacts(file: string | null, warn?: (message: string) => void): Map<string, CardFacts> | null {
+  if (!file) {
+    warn?.("card stats skipped: the game's sts2.dll was not found beside the pack");
+    return null;
+  }
+  try {
+    const size = fs.statSync(file).size;
+    if (size > MAX_ASSEMBLY) throw new DotnetError("unsupported", `it is larger than ${MAX_ASSEMBLY / 1024 / 1024} MB`);
+    return readCards(new Model(new Assembly(fs.readFileSync(file))));
+  } catch (e) {
+    if (e instanceof DotnetError || e instanceof UnsupportedBuildError) {
+      warn?.(`card stats skipped: ${file} is not a game build this version understands (${e.message})`);
+      return null;
+    }
+    // Card stats are optional: no failure reading them (even a bug here) costs the user their art.
+    warn?.(`card stats skipped: cannot read ${file} (${e instanceof Error ? e.message : String(e)})`);
+    return null;
+  }
 }
 
 export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
@@ -372,6 +410,9 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
   const version = await gameVersion(o.pck, index);
   const read = (e: PckEntry) => readPckFile(o.pck, e);
   const mapped = await mapIds(index, read, o.kinds);
+  const cardFacts = o.kinds.includes("card") && o.assembly !== null ? loadCardFacts(o.assembly ?? findAssembly(o.pck), o.warn) : null;
+  const withUnknown: string[] = [];
+  let cardStats = 0;
 
   fs.mkdirSync(path.dirname(out), { recursive: true });
   const staging = fs.mkdtempSync(`${out}.tmp-`);
@@ -418,7 +459,21 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
             .toBuffer({ resolveWithObject: true });
           write(iconPath(staging, m.kind, m.slug, size), data);
           if (size === largest) {
-            items[id] = { kind: m.kind, file: `${m.kind}/${m.slug}@${size}.webp`, w: info.width, h: info.height, ...(m.name ? { name: m.name } : {}), ...(m.description ? { description: m.description } : {}) };
+            const facts = m.kind === "card" ? cardFacts?.get(id) : undefined;
+            const card = facts ? toCardStats(facts, m.template) : undefined;
+            if (card) {
+              cardStats++;
+              if (card.unknown) withUnknown.push(id);
+            }
+            items[id] = {
+              kind: m.kind,
+              file: `${m.kind}/${m.slug}@${size}.webp`,
+              w: info.width,
+              h: info.height,
+              ...(m.name ? { name: m.name } : {}),
+              ...(m.description ? { description: m.description } : {}),
+              ...(card ? { card } : {}),
+            };
             counts[m.kind]++;
           }
         }
@@ -463,7 +518,16 @@ export async function extract(o: ExtractOptions): Promise<ExtractSummary> {
     swapIntoPlace(staging, out, o.warn);
     activeStaging.delete(staging);
     const unmapped = [...mapped].filter(([, m]) => !m.texture).map(([id]) => id);
-    return { gameVersion: version, engine: index.engine.join("."), counts, unmapped, fonts: fontFiles, files, bytes };
+    return {
+      gameVersion: version,
+      engine: index.engine.join("."),
+      counts,
+      unmapped,
+      fonts: fontFiles,
+      files,
+      bytes,
+      cardStats: cardFacts ? { cards: cardStats, withUnknown: withUnknown.sort() } : null,
+    };
   } catch (e) {
     fs.rmSync(staging, { recursive: true, force: true });
     activeStaging.delete(staging);

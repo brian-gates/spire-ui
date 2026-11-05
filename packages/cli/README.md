@@ -13,14 +13,15 @@ Requires Node.js 20.9 or later.
 ```sh
 npx spire-ui extract-art                 # finds a Steam install, writes ./public/spire
 npx spire-ui extract-art --game-dir "D:/Games/Slay the Spire 2" --out public/spire --sizes 32,64
+npx spire-ui extract-art --kinds card --sizes 64,256  # card art plus each card's stats and text
 ```
 
 | Option | Default | |
 |---|---|---|
 | `--game-dir <dir>` | Steam's usual folders | Folder holding `Slay the Spire 2.pck` (on macOS the game folder or `SlayTheSpire2.app/Contents/Resources`). Without it the CLI looks in Steam's default library on macOS, Windows and Linux, plus every library listed in Steam's `libraryfolders.vdf`. |
 | `--out <dir>` | `./public/spire` | Output folder, replaced as a whole on every run. |
-| `--sizes <list>` | `64` | Icon box sizes in px. Icons keep their aspect ratio and are never upscaled. |
-| `--kinds <list>` | `relic,potion,class,room,ui` | Add `card` for card portraits (off by default: no v1 component needs them). |
+| `--sizes <list>` | `64` | Icon box sizes in px (up to 4096), e.g. `64,256` for card art. Icons keep their aspect ratio and are never upscaled: an image smaller than the box keeps its own size. |
+| `--kinds <list>` | `relic,potion,class,room,ui` | Add `card` for card portraits plus [card stats](#card-stats) (off by default: no v1 component needs them). |
 | `--fonts` | off | Also copy the game's fonts. |
 
 Exit codes: `0` done, `2` a problem with the input (game not found, not a Godot 4 pack, encrypted
@@ -64,6 +65,44 @@ What is extracted:
   subset or converted), recorded as `fonts.display` and `fonts.body`. They are the game's copies,
   for local use only.
 
+### Card stats
+
+With `--kinds card`, each `CARD.*` item also gets a `card` object read statically from the game's
+own code, `sts2.dll` in the `data_sts2_*` folder beside the pack. The code is never run; the CLI
+reads the assembly's metadata and follows a few small, fixed patterns in each card's IL (its
+constructor, its constant getters, its variables and its `OnUpgrade`):
+
+```jsonc
+"CARD.BLADE_DANCE": {
+  "kind": "card", "file": "card/blade_dance@256.webp", "w": 256, "h": 195, "name": "Blade Dance", ...
+  "card": {
+    "cost": 1,                      // energy; "X" for X-cost cards, null for unplayable ones
+    "type": "Skill", "rarity": "Common", "target": "Self",
+    "pool": "silent", "frame": "card_frame_green",
+    "keywords": ["Exhaust"],        // upgradedKeywords when an upgrade changes them
+    "vars": { "Cards": { "base": 3, "upgraded": 4 } },
+    "description": "Add 3 Shivs into your Hand.",
+    "upgradedDescription": "Add 4 Shivs into your Hand."
+  }
+}
+```
+
+Other optional fields: `upgradedCost`, `starCost` (Regent cards), and `unknown`. Enum values
+(`type`, `rarity`, `target`, keywords) are the game's own names. `vars` are the numbers the card
+text uses, by placeholder name; a var the game recalculates during combat is marked
+`"computed": true` and keeps `base` only when the code gives one. Anything the reader does not
+recognise is never guessed: the field is left out and named in the card's `unknown` list (for
+example `"target"` for the few cards whose target is decided at runtime).
+
+`description` and `upgradedDescription` are the card's English text rendered with these numbers
+as plain text (markup removed; energy and star icons written as `2 Energy`, `1 Star`; numbers that
+only exist in combat shown as `X`). The item's own `description` is unchanged (numbers as `X`).
+
+Stats ride on the card items, so a card needs its art to appear in the manifest; there is no
+stats-only mode (pass a small `--sizes` if you only want the stats). If `sts2.dll` is missing,
+unreadable or from a build whose card model this version does not recognise, the run warns and
+writes the card art without stats.
+
 The output is written to `<out>.tmp-*` beside `<out>` and renamed into place only when everything
 succeeded, so a failed or interrupted run never leaves a partial `<out>`, and a failed re-run keeps
 the previous output. An existing `<out>` is replaced only if it is empty or provably a previous
@@ -86,7 +125,15 @@ from a fixed kind, a `[a-z0-9_-]` slug and the size.
 - `src/godot.ts`: `.import` remaps, AtlasTexture `.tres`, localization text, RSCC-compressed
   resources (zstd, deflate, gzip) and the font embedded in an imported FontFile.
 - `src/extract.ts`: id to texture mapping, image output, manifest and the atomic swap.
-- `src/game-paths.ts`: Steam install folders per OS.
+- `src/game-paths.ts`: Steam install folders per OS, and the game's `sts2.dll` beside the pack.
+- `src/dotnet/`: a bounded ECMA-335 reader (PE sections, metadata tables and heaps, signatures,
+  method bodies and IL). The assembly is untrusted: every index, offset and length is checked and
+  anything malformed is a `DotnetError`.
+- `src/card-stats.ts`: card facts from the game's code by type and member name (never by token),
+  with a small symbolic evaluator for the straight-line IL patterns cards use.
+- `src/card-text.ts`: the subset of SmartFormat the English card templates use (`{Var}`,
+  `diff()`, `inverseDiff()`, `plural`, `show`, `cond`, `choose`, implicit conditionals,
+  `energyIcons`, `starIcons`, nesting).
 - `src/manifest.ts`: a copy of the resolver's `SpireManifest` type; a test fails if they differ.
 
 ## Development
@@ -97,7 +144,9 @@ bun run --cwd packages/cli typecheck   # tsc -p packages/cli
 bun run --cwd packages/cli build       # tsup -> dist/
 ```
 
-Test fixtures are generated in the tests from tiny synthetic images; no game files are used.
+Test fixtures are generated in the tests from tiny synthetic images and a synthetic .NET assembly
+(`test/game-assembly.ts`); no game files are used. `test/real-game.test.ts` additionally checks a
+few known cards against a local install when one is found (it is skipped in CI and elsewhere).
 
 ## Credits
 

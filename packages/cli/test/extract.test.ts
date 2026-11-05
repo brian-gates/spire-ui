@@ -4,12 +4,13 @@ import * as path from "node:path";
 import { deflateSync } from "node:zlib";
 import sharp from "sharp";
 import { afterAll, describe, expect, test } from "vitest";
-import { parseManifest } from "../../../registry/spire/lib/assets";
+import { parseManifest, resolveAsset } from "../../../registry/spire/lib/assets";
 import { CtexError } from "../src/ctex";
 import { ExtractError, extract, mapIds } from "../src/extract";
 import { embeddedSfnt, plainText, unwrapRscc } from "../src/godot";
 import { readPckFile, readPckIndex } from "../src/pck";
 import { atlasTres, buildPck, fakeSfnt, type FakeFile, importFile, pngCtex, rscc, solidPng, zstdStored } from "./fixtures";
+import { buildGameAssembly } from "./game-assembly";
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "spire-extract-"));
 afterAll(() => fs.rmSync(tmp, { recursive: true, force: true }));
@@ -350,5 +351,108 @@ describe("godot helpers", () => {
     const res = Buffer.concat([Buffer.from("RSRC junk \x00\x01\x00\x00 not a font"), font, Buffer.from("trailing cache data")]);
     expect(embeddedSfnt(res)?.equals(font)).toBe(true);
     expect(embeddedSfnt(Buffer.from("no font here"))).toBeNull();
+  });
+});
+
+describe("card stats", () => {
+  // Invented card text in the game's localization format; the cards match test/game-assembly.ts.
+  const cardsJson = {
+    "STRIKE_TEST.title": "Test Strike",
+    "STRIKE_TEST.description": "Deal {Damage:diff()} damage.",
+    "BLADE_TEST.title": "Test Blades",
+    "BLADE_TEST.description": "Add {Cards:diff()} [gold]{Cards:plural:Blade|Blades}[/gold] into your [gold]Hand[/gold].",
+    "CURSE_TEST.title": "Test Curse",
+    "CURSE_TEST.description": "Unplayable.",
+  };
+
+  /** A game with two card portraits (a 500x380 image and a 100x80 atlas sprite) and, optionally, its code. */
+  async function cardGame(dll: Buffer | null): Promise<string> {
+    const dir = path.join(tmp, `cards-${n++}`);
+    fs.mkdirSync(dir);
+    const files: FakeFile[] = [
+      { path: "localization/eng/cards.json", data: Buffer.from(JSON.stringify(cardsJson)) },
+      { path: "images/packed/card_portraits/ironclad/strike_test.png.import", data: importFile(".godot/imported/strike_test.png-1.ctex") },
+      { path: ".godot/imported/strike_test.png-1.ctex", data: pngCtex(await solidPng(500, 380, [200, 30, 30]), 500, 380) },
+      { path: "images/atlases/card_atlas.sprites/ironclad/blade_test.tres", data: atlasTres("images/atlases/card_atlas.png", 4, 8, 100, 80) },
+      { path: "images/atlases/card_atlas.png.import", data: importFile(".godot/imported/card_atlas.png-2.ctex") },
+      { path: ".godot/imported/card_atlas.png-2.ctex", data: pngCtex(await solidPng(128, 128, [30, 200, 30]), 128, 128) },
+    ];
+    fs.writeFileSync(path.join(dir, PCK_NAME), buildPck({ files }));
+    if (dll) {
+      fs.mkdirSync(path.join(dir, "data_sts2_test_x86_64"));
+      fs.writeFileSync(path.join(dir, "data_sts2_test_x86_64", "sts2.dll"), dll);
+    }
+    return dir;
+  }
+
+  test("--kinds card adds each card's stats and text from the game's code, and the resolver keeps them", async () => {
+    const game = await cardGame(buildGameAssembly());
+    const out = outDir("cards");
+    const warnings: string[] = [];
+    const summary = await extract({ pck: path.join(game, PCK_NAME), out, sizes: [64, 256], kinds: ["card"], fonts: false, warn: (m) => warnings.push(m) });
+    expect(warnings).toEqual([]);
+    expect(summary.cardStats).toEqual({ cards: 2, withUnknown: [] });
+    expect(summary.unmapped).toEqual(["CARD.CURSE_TEST"]);
+
+    const raw = JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8"));
+    expect(raw.schemaVersion).toBe(1);
+    expect(raw.items["CARD.STRIKE_TEST"]).toEqual({
+      kind: "card",
+      file: "card/strike_test@256.webp",
+      w: 256,
+      h: 195,
+      name: "Test Strike",
+      description: "Deal X damage.",
+      card: {
+        cost: 1,
+        type: "Attack",
+        rarity: "Basic",
+        target: "AnyEnemy",
+        pool: "ironclad",
+        frame: "card_frame_red",
+        vars: { Damage: { base: 6, upgraded: 9 } },
+        description: "Deal 6 damage.",
+        upgradedDescription: "Deal 9 damage.",
+      },
+    });
+    // An atlas sprite smaller than the requested size keeps its own size: never upscaled.
+    expect(raw.items["CARD.BLADE_TEST"]).toMatchObject({ file: "card/blade_test@256.webp", w: 100, h: 80, card: { description: "Add 3 Blades into your Hand.", upgradedDescription: "Add 4 Blades into your Hand." } });
+    const small = await sharp(path.join(out, "card/strike_test@64.webp")).metadata();
+    expect([small.width, small.height]).toEqual([64, 49]);
+
+    const manifest = parseManifest(raw);
+    expect(manifest!.items["CARD.STRIKE_TEST"]).toEqual(raw.items["CARD.STRIKE_TEST"]);
+    expect(resolveAsset("CARD.BLADE_TEST", manifest, "/spire")).toMatchObject({ source: "extracted", card: { cost: 1, keywords: ["Exhaust"], vars: { Cards: { base: 3, upgraded: 4 } } } });
+  });
+
+  test("without readable game code, cards still get their art (with a warning) and no stats", async () => {
+    for (const dll of [null, Buffer.from("MZ not really an assembly".padEnd(200, "."))]) {
+      const game = await cardGame(dll);
+      const out = outDir("nocode");
+      const warnings: string[] = [];
+      const summary = await extract({ pck: path.join(game, PCK_NAME), out, sizes: [64], kinds: ["card"], fonts: false, warn: (m) => warnings.push(m) });
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toMatch(dll ? /card stats skipped: .*sts2\.dll is not a game build/ : /card stats skipped: the game's sts2\.dll was not found/);
+      expect(summary.cardStats).toBeNull();
+      expect(summary.counts.card).toBe(2);
+      const items = JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8")).items;
+      expect(Object.values(items).some((i) => "card" in (i as object))).toBe(false);
+    }
+  });
+
+  test("a build whose card model changed is reported as unsupported, art unaffected", async () => {
+    const game = await cardGame(buildGameAssembly({ changedCardModelCtor: true }));
+    const warnings: string[] = [];
+    const summary = await extract({ pck: path.join(game, PCK_NAME), out: outDir("unsupported"), sizes: [64], kinds: ["card"], fonts: false, warn: (m) => warnings.push(m) });
+    expect(warnings.join("\n")).toMatch(/not a game build this version understands \(CardModel/);
+    expect(summary.counts.card).toBe(2);
+  });
+
+  test("assembly: null, or kinds without card, never reads the game's code", async () => {
+    const game = await cardGame(Buffer.from("garbage"));
+    const warnings: string[] = [];
+    const a = await extract({ pck: path.join(game, PCK_NAME), out: outDir("skip"), sizes: [64], kinds: ["card"], fonts: false, assembly: null, warn: (m) => warnings.push(m) });
+    const b = await extract({ pck: path.join(game, PCK_NAME), out: outDir("skip"), sizes: [64], kinds: ["relic"], fonts: false, warn: (m) => warnings.push(m) });
+    expect([a.cardStats, b.cardStats, warnings]).toEqual([null, null, []]);
   });
 });
