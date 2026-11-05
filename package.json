@@ -6,7 +6,9 @@
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "test": "vitest run",
-    "registry:build": "shadcn build -o apps/docs/public/r"
+    "registry:build": "shadcn build -o apps/docs/public/r",
+    "storybook": "bun run --cwd apps/storybook dev",
+    "storybook:build": "bun run --cwd apps/storybook build"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.3",

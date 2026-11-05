@@ -3,3 +3,4 @@ apps/docs/public/r/
 node_modules
 dist
 spire-art/
+storybook-static/

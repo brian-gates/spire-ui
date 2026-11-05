@@ -9,5 +9,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["registry", "tests", "vitest.config.ts"]
+  "include": ["registry", "tests", "vitest.config.ts", "apps/storybook/stories", "apps/storybook/.storybook"]
 }

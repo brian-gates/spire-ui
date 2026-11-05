@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@import "../../../registry/spire/theme/spire.css";
+@source "../../../registry/spire";
+@source "../stories";
+
+body {
+  background: var(--color-spire-bg);
+  color: var(--color-spire-ink);
+  font-family: var(--font-spire-body);
+}
