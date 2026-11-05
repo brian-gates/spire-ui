@@ -8,11 +8,15 @@ function Filled({ id }: { id: string }) {
   const a = useSpireAsset(id);
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <li data-slot="potion-slot" data-filled="true" tabIndex={0} aria-label={a.name} className="spire-panel inline-flex size-10 items-center justify-center focus-visible:outline-2 focus-visible:outline-spire-gold">
+      <li data-slot="potion-slot" data-filled="true" className="spire-panel inline-flex size-10">
+        <TooltipTrigger
+          type="button"
+          aria-label={a.name}
+          className="inline-flex size-full cursor-default appearance-none items-center justify-center border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-spire-gold"
+        >
           <SpireIcon id={id} size={28} />
-        </li>
-      </TooltipTrigger>
+        </TooltipTrigger>
+      </li>
       <TooltipContent>
         <div className="font-spire-display text-spire-gold">{a.name}</div>
         {a.source === "extracted" && a.description && <div className="text-spire-muted">{a.description}</div>}

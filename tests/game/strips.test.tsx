@@ -83,7 +83,7 @@ describe("RelicStrip", () => {
   });
   it("shows all with no overflow button when within max", () => {
     render(<RelicStrip relics={many(3)} />);
-    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByRole("button", { name: /more relics/ })).toBeNull();
   });
   it("tooltip shows manifest name and description on focus", async () => {
     const user = userEvent.setup();

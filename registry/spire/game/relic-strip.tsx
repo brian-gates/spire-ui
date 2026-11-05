@@ -21,11 +21,15 @@ function Relic({ id }: { id: string }) {
   const a = useSpireAsset(id);
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <li data-slot="relic" tabIndex={0} aria-label={a.name} className="inline-flex rounded-sm focus-visible:outline-2 focus-visible:outline-spire-gold">
+      <li data-slot="relic" className="inline-flex">
+        <TooltipTrigger
+          type="button"
+          aria-label={a.name}
+          className="inline-flex cursor-default appearance-none rounded-sm border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-spire-gold"
+        >
           <SpireIcon id={id} size={32} />
-        </li>
-      </TooltipTrigger>
+        </TooltipTrigger>
+      </li>
       <TooltipContent><RelicTip id={id} /></TooltipContent>
     </Tooltip>
   );
@@ -36,15 +40,13 @@ function Overflow({ hidden }: { hidden: { id: string }[] }) {
   return (
     <li className="inline-flex">
       <Tooltip open={open} onOpenChange={setOpen}>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label={`+${hidden.length} more relics`}
-            className="font-spire-display rounded-full border border-spire-panel-edge px-2 text-sm text-spire-muted focus-visible:outline-2 focus-visible:outline-spire-gold"
-          >
-            +{hidden.length}
-          </button>
+        <TooltipTrigger
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label={`+${hidden.length} more relics`}
+          className="font-spire-display rounded-full border border-spire-panel-edge bg-transparent px-2 text-sm text-spire-muted focus-visible:outline-2 focus-visible:outline-spire-gold"
+        >
+          +{hidden.length}
         </TooltipTrigger>
         <TooltipContent className="max-h-64 overflow-auto">
           <ul className="list-none">

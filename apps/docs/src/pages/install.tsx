@@ -11,10 +11,9 @@ export function Install() {
 
       <h2 className="font-spire-display mt-8 text-xl font-bold">1. Set up shadcn</h2>
       <p className="mt-2">If your project does not use shadcn yet:</p>
-      <div className="mt-2"><CodeBlock>{"npx shadcn@latest init --base radix"}</CodeBlock></div>
+      <div className="mt-2"><CodeBlock>{"npx shadcn@latest init"}</CodeBlock></div>
       <p className="mt-2 text-spire-muted">
-        Choose the <code>radix</code> base. Spire UI is built on Radix; with the Base UI base, shadcn rewrites{" "}
-        <code>asChild</code> to <code>render</code> while adding components and the tooltips stop compiling.
+        Any shadcn base works (Radix or Base UI); both are covered by the install smoke test.
       </p>
 
       <h2 className="font-spire-display mt-8 text-xl font-bold">2. Add a component</h2>
