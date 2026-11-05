@@ -9,11 +9,19 @@
     "registry:build": "shadcn build -o apps/docs/public/r"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "clsx": "^2.1.1",
+    "happy-dom": "^21.0.4",
     "shadcn": "^4.23.0",
     "tailwind-merge": "^3.7.0",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
+  },
+  "dependencies": {
+    "react": "^19",
+    "react-dom": "^19"
   }
 }

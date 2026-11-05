@@ -57,6 +57,43 @@
           "target": "~/lib/cn.ts"
         }
       ]
+    },
+    {
+      "name": "spire-fallback-keys",
+      "type": "registry:lib",
+      "title": "Spire fallback keys",
+      "description": "FallbackKey type and fallbackKeyFor() mapping game ids to fallback icon keys.",
+      "files": [
+        {
+          "path": "registry/spire/icons/fallback-keys.ts",
+          "type": "registry:lib",
+          "target": "~/lib/spire/icons/fallback-keys.ts"
+        }
+      ]
+    },
+    {
+      "name": "spire-assets",
+      "type": "registry:lib",
+      "title": "Spire assets",
+      "description": "Manifest parser, id resolver and SpireAssets provider for locally extracted art.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-fallback-keys.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/lib/assets.ts",
+          "type": "registry:lib",
+          "target": "~/lib/spire/lib/assets.ts"
+        },
+        {
+          "path": "registry/spire/lib/assets-provider.tsx",
+          "type": "registry:lib",
+          "target": "~/lib/spire/lib/assets-provider.tsx"
+        }
+      ]
     }
   ]
 }
