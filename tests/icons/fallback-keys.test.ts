@@ -14,3 +14,9 @@ describe("fallbackKeyFor", () => {
     expect(fallbackKeyFor("whatever")).toBe("relic");
   });
 });
+
+describe("stat.ascension", () => {
+  it("maps STAT.ASCENSION to its own glyph", () => {
+    expect(fallbackKeyFor("STAT.ASCENSION")).toBe("stat.ascension");
+  });
+});

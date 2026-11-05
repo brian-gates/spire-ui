@@ -30,6 +30,7 @@
           "color-class-defect": "#5fb0e8",
           "color-class-regent": "#e8a944",
           "color-class-necrobinder": "#c49ae6",
+          "color-class-colorless": "#c2cbcb",
           "color-rarity-common": "#a9b8b8",
           "color-rarity-uncommon": "#6fb8e0",
           "color-rarity-rare": "#f0c75e",
@@ -430,6 +431,48 @@
           "path": "registry/spire/game/run-row.tsx",
           "type": "registry:ui",
           "target": "~/lib/spire/game/run-row.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-card-frame",
+      "type": "registry:ui",
+      "title": "CardFrame",
+      "description": "Original card frame: cost badge, name banner, art slot and type line, coloured by character and rarity.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-icon.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/card-frame.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/card-frame.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-map-node",
+      "type": "registry:ui",
+      "title": "MapNode",
+      "description": "Map room node with an accessible room and state name (available, visited, locked).",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-icons.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/map-node.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/map-node.tsx"
         }
       ]
     }

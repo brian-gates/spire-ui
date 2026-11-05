@@ -16,7 +16,7 @@ describe("storybook css", () => {
       build: { write: false, rollupOptions: { input: join(sb, "src/storybook.css") } },
     });
     const css = (Array.isArray(out) ? out : [out]).flatMap((o: any) => o.output).map((a: any) => a.source ?? "").join("\n");
-    for (const needle of [".sr-only", "--color-class-silent", "--color-spire-hp", ".text-spire-hp"]) {
+    for (const needle of [".sr-only", "--color-class-silent", "--color-spire-hp", ".text-spire-hp", "--color-class-colorless", ".border-class-colorless", ".border-rarity-rare", ".aspect-\\[4\\/3\\]"]) {
       expect(css, needle).toContain(needle);
     }
   });

@@ -7,7 +7,7 @@ const KEYS: FallbackKey[] = [
   "relic", "potion", "card",
   "class.ironclad", "class.silent", "class.defect", "class.regent", "class.necrobinder", "class.unknown",
   "room.monster", "room.elite", "room.rest", "room.shop", "room.treasure", "room.event", "room.boss", "room.unknown",
-  "stat.hp", "stat.gold", "stat.energy",
+  "stat.hp", "stat.gold", "stat.energy", "stat.ascension",
 ];
 
 function FallbackGrid() {
@@ -35,7 +35,7 @@ const meta = {
       control: "select",
       options: [
         "RELIC.BURNING_BLOOD", "POTION.FIRE_POTION", "CARD.STRIKE", "CHARACTER.SILENT", "CHARACTER.MODDED_HERO",
-        "ROOM.ELITE", "ROOM.UNKNOWN_ROOM", "STAT.GOLD", "UNKNOWN", "MODDED.SOMETHING_NEW",
+        "ROOM.ELITE", "ROOM.UNKNOWN_ROOM", "STAT.GOLD", "STAT.ASCENSION", "UNKNOWN", "MODDED.SOMETHING_NEW",
       ],
     },
     size: { control: { type: "range", min: 16, max: 160, step: 8 } },

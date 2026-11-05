@@ -44,6 +44,8 @@ const ART: Record<FallbackKey, ReactNode> = {
   "stat.gold": <path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 4a6 6 0 1 0 0 12 6 6 0 0 0 0-12Zm0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z" fillRule="evenodd" />,
   // energy orb with a spark
   "stat.energy": <path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm1 4-5 7h3.5L10.5 18l5-7H12l1-5Z" fillRule="evenodd" />,
+  // stacked upward chevrons
+  "stat.ascension": <path d="m12 2 8 7-1.6 1.8L12 5.2 5.6 10.8 4 9l8-7Zm0 7 8 7-1.6 1.8L12 12.2l-6.4 5.6L4 16l8-7Zm0 7 8 6h-3.2L12 18.4 7.2 22H4l8-6Z" />,
 };
 
 export function FallbackIcon(props: { k: FallbackKey; tint?: string; className?: string; title: string }) {
