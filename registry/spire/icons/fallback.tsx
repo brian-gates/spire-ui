@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { cn } from "../lib/cn";
 import { fallbackKeyFor, type FallbackKey } from "./fallback-keys";
 
 export { fallbackKeyFor, type FallbackKey };
@@ -16,7 +17,7 @@ const ART: Record<FallbackKey, ReactNode> = {
   // two crossed daggers
   "class.silent": <path d="m5 3 6 6-2 2-4-4V3Zm14 0v4l-4 4-2-2 6-6ZM9.5 12.5l2.5 2.5 2.5-2.5 5 5-2 2-3.5-3.5-2 2-2-2-3.5 3.5-2-2 5-5Z" />,
   // orb inside a ring with nodes
-  "class.defect": <path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm0 3.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z" fillRule="evenodd" />,
+  "class.defect": <path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8ZM12 1.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm0 17a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM1.5 12a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm17 0a2 2 0 1 1 4 0 2 2 0 0 1-4 0Z" />,
   // crown
   "class.regent": <path d="M3 18 2 7l5 4 5-7 5 7 5-4-1 11H3Zm1 2h16v2H4v-2Z" />,
   // wisp with a hollow
@@ -36,7 +37,7 @@ const ART: Record<FallbackKey, ReactNode> = {
   "room.event": <path d="M12 1.5 22.5 12 12 22.5 1.5 12 12 1.5Zm-1 14.5v2h2v-2h-2Zm1-9c-1.7 0-3 1.1-3 2.8h2c0-.6.4-.9 1-.9s1 .3 1 .8c0 1.3-2 1.2-2 3.3h2c0-1.4 2-1.5 2-3.3C15 8.1 13.8 7 12 7Z" fillRule="evenodd" />,
   // large skull with crown spikes
   "room.boss": <path d="M3 8 6 10l3-6 3 4 3-4 3 6 3-2-1.5 8H17v4H7v-4H4.5L3 8Zm5.5 5a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6Zm7 0a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6Z" fillRule="evenodd" />,
-  "room.unknown": <path d="M4 4h16v16H4V4Zm7 12v2h2v-2h-2Zm1-8c-1.7 0-3 1.1-3 2.8h2c0-.6.4-.9 1-.9s1 .3 1 .8c0 1.3-2 1.2-2 3.3h2c0-1.4 2-1.5 2-3.3C15 9.1 13.8 8 12 8Z" fillRule="evenodd" />,
+  "room.unknown": <path d="M3 3h6v2H5v4H3V3Zm12 0h6v6h-2V5h-4V3ZM3 15h2v4h4v2H3v-6Zm16 0h2v6h-6v-2h4v-4ZM10 10h4v4h-4v-4Z" />,
   // heart
   "stat.hp": <path d="M12 21C5 15.5 2.5 12 2.5 8.5A5 5 0 0 1 12 6.5a5 5 0 0 1 9.5 2C21.5 12 19 15.5 12 21Z" />,
   // coin
@@ -56,7 +57,7 @@ export function FallbackIcon(props: { k: FallbackKey; tint?: string; className?:
       width="1em"
       height="1em"
       fill="currentColor"
-      className={className}
+      className={cn("shrink-0", className)}
       style={style}
     >
       <title>{title}</title>

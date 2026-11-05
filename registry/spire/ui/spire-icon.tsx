@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FallbackIcon, fallbackKeyFor } from "../icons/fallback";
+import { cn } from "../lib/cn";
 import { useSpireAsset } from "../lib/assets-provider";
 
 export function SpireIcon(props: { id: string; size?: number; tint?: string; className?: string }) {
@@ -7,8 +8,7 @@ export function SpireIcon(props: { id: string; size?: number; tint?: string; cla
   const asset = useSpireAsset(id);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
-  // Per-instance state: a broken image only affects this icon.
-  useEffect(() => setFailedSrc(null), [id]);
+  // Per-instance state keyed by src: a broken image only affects this icon.
 
   if (asset.source === "extracted" && failedSrc !== asset.src) {
     return (
@@ -18,14 +18,14 @@ export function SpireIcon(props: { id: string; size?: number; tint?: string; cla
         width={size}
         height={size}
         loading="lazy"
-        className={className}
+        className={cn(className)}
         onError={() => setFailedSrc(asset.src)}
       />
     );
   }
   const k = asset.source === "fallback" ? asset.fallback : fallbackKeyFor(id);
   return (
-    <span className={className} style={{ display: "inline-block", width: size, height: size, fontSize: size, lineHeight: 0 }}>
+    <span className={cn("inline-block", className)} style={{ display: "inline-block", width: size, height: size, fontSize: size, lineHeight: 0 }}>
       <FallbackIcon k={k} tint={tint} title={asset.name} />
     </span>
   );

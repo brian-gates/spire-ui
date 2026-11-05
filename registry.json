@@ -54,7 +54,7 @@
         {
           "path": "registry/spire/lib/cn.ts",
           "type": "registry:lib",
-          "target": "~/lib/cn.ts"
+          "target": "~/lib/spire/lib/cn.ts"
         }
       ]
     },

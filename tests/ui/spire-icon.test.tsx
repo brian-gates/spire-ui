@@ -48,6 +48,14 @@ describe("SpireIcon", () => {
     expect(container.querySelector("svg title")!.textContent).toBe("Fire Water");
   });
 
+  it("merges className onto the img and the fallback", () => {
+    const { container } = wrap(<><SpireIcon id="RELIC.A" className="foo" /><SpireIcon id="CARD.X" className="bar" /></>);
+    expect(container.querySelector("img")!.className).toContain("foo");
+    expect(container.querySelector("span.bar")).not.toBeNull();
+    const { container: c2 } = render(<FallbackIcon k="relic" title="t" className="baz" />);
+    expect(c2.querySelector("svg")!.getAttribute("class")).toContain("baz");
+  });
+
   it("works without a provider", () => {
     const { container } = render(<SpireIcon id="CARD.STRIKE" />);
     expect(container.querySelector('svg[role="img"]')).not.toBeNull();
