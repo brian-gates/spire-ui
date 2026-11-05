@@ -1,12 +1,10 @@
+import { COMPONENT_SLUGS } from "../src/component-slugs";
 import { expect, test } from "@playwright/test";
 
 // The e2e server has no SPA fallback (like GitHub Pages), and these tests fetch raw HTML without running JS,
 // so they prove what a crawler sees.
 const SITE = "https://brian-gates.github.io/spire-ui/";
-const COMPONENTS = [
-  "icon", "panel", "banner", "button", "badge", "divider", "tooltip", "tabs", "dialog",
-  "class-badge", "stat", "relic-strip", "potion-slots", "run-header", "player-row", "run-row", "card-frame", "map-node",
-];
+const COMPONENTS: readonly string[] = COMPONENT_SLUGS;
 const H1: Record<string, string> = { "": "Spire UI", install: "Install", "extract-art": "Extract art", components: "Components" };
 const ROUTES = ["", "install", "extract-art", "components", ...COMPONENTS.map((c) => `components/${c}`)];
 const canonical = (path: string) => (path ? `${SITE}${path}/` : SITE);

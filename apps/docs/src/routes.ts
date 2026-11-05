@@ -1,4 +1,11 @@
 import { COMPONENTS } from "./components-docs";
+import { COMPONENT_SLUGS } from "./component-slugs";
+
+// One source for the component pages: fail the build if the docs and the slug list drift apart.
+const docSlugs = COMPONENTS.map((c) => c.slug);
+if (docSlugs.join() !== COMPONENT_SLUGS.join()) {
+  throw new Error(`component-slugs.ts (${COMPONENT_SLUGS.join(", ")}) does not match components-docs.tsx (${docSlugs.join(", ")})`);
+}
 
 /** Public origin plus base path. Canonical URLs, the sitemap and Open Graph tags are absolute against this. */
 export const SITE = "https://brian-gates.github.io/spire-ui/";

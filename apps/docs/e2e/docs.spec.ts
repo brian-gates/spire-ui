@@ -1,9 +1,7 @@
+import { COMPONENT_SLUGS } from "../src/component-slugs";
 import { expect, test, type Page } from "@playwright/test";
 
-const COMPONENTS = [
-  "icon", "panel", "banner", "button", "badge", "divider", "tooltip", "tabs", "dialog",
-  "class-badge", "stat", "relic-strip", "potion-slots", "run-header", "player-row", "run-row", "card-frame", "map-node",
-];
+const COMPONENTS: readonly string[] = COMPONENT_SLUGS;
 const PAGES = ["", "install", "extract-art", ...COMPONENTS.map((c) => `components/${c}`)];
 const FOOTER = "Unofficial fan project, not affiliated with Mega Crit.";
 
