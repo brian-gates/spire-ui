@@ -106,7 +106,8 @@ const CHARACTER_ICON = /^images\/ui\/top_panel\/character_icon_([a-z0-9_]+)\.png
 
 /** One class item per character: the known ones plus every character whose top panel icon is in the game. */
 function characterItems(paths: readonly string[]): FixedId[] {
-  const found = paths.map((p) => CHARACTER_ICON.exec(p)?.[1]).filter((c): c is string => c !== undefined);
+  // character_icon_<name>_outline.png is the same character's outline variant, not a character.
+  const found = paths.map((p) => CHARACTER_ICON.exec(p)?.[1]).filter((c): c is string => c !== undefined && !c.endsWith("_outline"));
   return [...new Set([...KNOWN_CHARACTERS, ...found])].sort().map((c) => ({
     id: `CHARACTER.${c.toUpperCase()}`,
     kind: "class" as const,
