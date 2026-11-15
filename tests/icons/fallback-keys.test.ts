@@ -11,6 +11,10 @@ describe("fallbackKeyFor", () => {
     expect(fallbackKeyFor("ROOM.ELITE")).toBe("room.elite");
     expect(fallbackKeyFor("ROOM.WEIRD")).toBe("room.unknown");
     expect(fallbackKeyFor("STAT.GOLD")).toBe("stat.gold");
+    expect(fallbackKeyFor("MONSTER.BYRDONIS")).toBe("room.monster");
+    expect(fallbackKeyFor("ENCOUNTER.VANTOM_BOSS")).toBe("room.boss");
+    expect(fallbackKeyFor("ENCOUNTER.BYRDONIS_ELITE")).toBe("room.elite");
+    expect(fallbackKeyFor("ENCOUNTER.SLUDGE_SPINNER_WEAK")).toBe("room.monster");
     expect(fallbackKeyFor("whatever")).toBe("relic");
   });
 });

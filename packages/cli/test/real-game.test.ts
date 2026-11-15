@@ -82,4 +82,16 @@ describe.skipIf(!pck || !dll)("real game install (local only)", () => {
     expect(ids.get("UI.HOVER_TIP")?.texture).toBeTruthy();
     expect(hoverTipSlice(patch!, 320, 96)).toEqual({ left: 55, top: 43, right: 72, bottom: 21 });
   });
+
+  test("boss map icons go to their encounters and those encounters' monsters", async () => {
+    const index = await readPckIndex(pck!);
+    const ids = await mapIds(index, (e) => readPckFile(pck!, e), ["monster"]);
+    const monsters = [...ids].filter(([id, m]) => id.startsWith("MONSTER.") && m.texture).map(([id]) => id).sort();
+    for (const id of ["MONSTER.AEONGLASS", "MONSTER.CRUSHER", "MONSTER.ROCKET", "MONSTER.KIN_PRIEST", "MONSTER.KIN_FOLLOWER", "MONSTER.VANTOM", "MONSTER.WATERFALL_GIANT"]) {
+      expect(monsters, id).toContain(id);
+    }
+    expect(ids.get("ENCOUNTER.KAISER_CRAB_BOSS")?.texture?.entry.path).toBe(ids.get("MONSTER.CRUSHER")?.texture?.entry.path);
+    // Every boss icon found named at least its encounter.
+    expect([...ids.keys()].filter((id) => id.startsWith("ENCOUNTER.")).length).toBeGreaterThanOrEqual(9);
+  });
 });

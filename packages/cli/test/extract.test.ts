@@ -370,6 +370,56 @@ describe("mapIds", () => {
     }
   });
 
+  test("--kinds monster: each boss map icon goes to its encounter and that encounter's monsters", async () => {
+    const icon = async (name: string, rgb: [number, number, number]): Promise<FakeFile[]> => [
+      { path: `images/map/placeholder/${name}.png.import`, data: importFile(`.godot/imported/${name}.ctex`) },
+      { path: `.godot/imported/${name}.ctex`, data: pngCtex(await solidPng(8, 8, rgb), 8, 8) },
+    ];
+    const files = [
+      ...(await gameFiles()),
+      ...(await icon("gloom_bat_boss_icon", [1, 2, 3])),
+      // The outline variant is the same boss, not another one.
+      ...(await icon("gloom_bat_boss_icon_outline", [4, 5, 6])),
+      // A boss whose monsters are not named after it (the game's Kin: a priest and its followers).
+      ...(await icon("the_kin_boss_icon", [7, 8, 9])),
+      // A boss icon the localization does not name: no ids for it.
+      ...(await icon("cut_boss_boss_icon", [1, 1, 1])),
+      // Invented names in the game's localization format.
+      { path: "localization/eng/monsters.json", data: Buffer.from(JSON.stringify({ "GLOOM_BAT.name": "Gloom Bat", "KIN_PRIEST.name": "Kin Elder", "KIN_FOLLOWER.name": "Kin Acolyte" })) },
+      { path: "localization/eng/encounters.json", data: Buffer.from(JSON.stringify({ "GLOOM_BAT_BOSS.title": "The Gloom", "THE_KIN_BOSS.title": "The Kin" })) },
+    ];
+    const file = path.join(tmp, "bosses.pck");
+    fs.writeFileSync(file, buildPck({ files }));
+    const index = await readPckIndex(file);
+    const ids = await mapIds(index, (e) => readPckFile(file, e), ["monster"]);
+
+    expect([...ids.keys()].sort()).toEqual(["ENCOUNTER.GLOOM_BAT_BOSS", "ENCOUNTER.THE_KIN_BOSS", "MONSTER.GLOOM_BAT", "MONSTER.KIN_FOLLOWER", "MONSTER.KIN_PRIEST"]);
+    expect(ids.get("MONSTER.GLOOM_BAT")).toMatchObject({ kind: "monster", slug: "gloom_bat", name: "Gloom Bat", texture: { entry: { path: ".godot/imported/gloom_bat_boss_icon.ctex" } } });
+    expect(ids.get("ENCOUNTER.GLOOM_BAT_BOSS")).toMatchObject({ kind: "monster", slug: "encounter-gloom_bat_boss", name: "The Gloom", texture: { entry: { path: ".godot/imported/gloom_bat_boss_icon.ctex" } } });
+    for (const id of ["MONSTER.KIN_PRIEST", "MONSTER.KIN_FOLLOWER", "ENCOUNTER.THE_KIN_BOSS"]) {
+      expect(ids.get(id)?.texture?.entry.path, id).toBe(".godot/imported/the_kin_boss_icon.ctex");
+    }
+    expect(ids.get("MONSTER.KIN_PRIEST")?.name).toBe("Kin Elder");
+
+    // Not a default kind: the kit's components don't use it.
+    expect([...(await mapIds(index, (e) => readPckFile(file, e))).keys()].some((id) => id.startsWith("MONSTER.") || id.startsWith("ENCOUNTER."))).toBe(false);
+
+    // Extracted, they resolve by id under the monster kind, one file set per id.
+    const game = path.join(tmp, `game-${n++}`);
+    fs.mkdirSync(game);
+    fs.writeFileSync(path.join(game, PCK_NAME), buildPck({ files }));
+    const out = outDir("bosses");
+    const summary = await extract({ pck: path.join(game, PCK_NAME), out, sizes: [8], kinds: ["monster"], fonts: false });
+    expect(summary.counts.monster).toBe(5);
+    expect(fs.readdirSync(path.join(out, "monster")).sort()).toEqual([
+      "encounter-gloom_bat_boss@8.webp", "encounter-the_kin_boss@8.webp", "gloom_bat@8.webp", "kin_follower@8.webp", "kin_priest@8.webp",
+    ]);
+    const manifest = parseManifest(JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8")));
+    expect(resolveAsset("MONSTER.KIN_FOLLOWER", manifest, "/spire")).toMatchObject({ source: "extracted", src: "/spire/monster/kin_follower@8.webp", name: "Kin Acolyte" });
+    expect(resolveAsset("ENCOUNTER.THE_KIN_BOSS", manifest, "/spire")).toMatchObject({ source: "extracted", name: "The Kin" });
+    expect(resolveAsset("MONSTER.NOBODY", manifest, "/spire")).toMatchObject({ source: "fallback", fallback: "room.monster" });
+  });
+
   test("only the requested kinds are mapped", async () => {
     const file = path.join(tmp, "kinds.pck");
     fs.writeFileSync(file, buildPck({ files: await gameFiles() }));

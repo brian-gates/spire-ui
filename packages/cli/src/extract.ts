@@ -142,6 +142,23 @@ const FIXED: FixedId[] = [
   { id: "STAT.DECK", kind: "ui", sources: [ui("top_bar/top_bar_deck")] },
 ];
 
+/**
+ * Boss map icons: the game has no portrait per monster (monsters are Spine skeletons), but each boss
+ * encounter has a map icon, images/map/placeholder/<name>_boss_icon.png (white on transparent; the
+ * `_outline` variant is its outline). It belongs to the encounter <NAME>_BOSS and is given to that
+ * encounter's monsters. A few bosses' monsters are not named after the encounter; they are listed
+ * here (from the game's code). Others get the monster of the same name.
+ * Some bosses (Ceremonial Beast, Queen, The Insatiable) have an animated map node instead: a Spine
+ * parts atlas, not a picture, so they get no icon.
+ */
+const BOSS_ICON = /^images\/map\/placeholder\/([a-z0-9_]+)_boss_icon\.png\.import$/;
+const BOSS_MONSTERS: Readonly<Record<string, readonly string[]>> = {
+  KAISER_CRAB: ["CRUSHER", "ROCKET"],
+  THE_KIN: ["KIN_PRIEST", "KIN_FOLLOWER"],
+};
+/** Encounter slugs carry this prefix so they can never collide with a monster's (ids have no `-`). */
+const ENCOUNTER_SLUG = "encounter-";
+
 interface Collection {
   kind: AssetKind;
   prefix: string;
@@ -289,6 +306,26 @@ export async function mapIds(index: PckIndex, read: (e: PckEntry) => Promise<Buf
     const title = f.title ? (await loc(f.title[0]))?.get(f.title[1]) : undefined;
     const description = f.description ? (await loc(f.description[0]))?.get(f.description[1]) : undefined;
     await add(f.id, f.kind, slug, f.sources, title, description);
+  }
+
+  if (want.has("monster")) {
+    // monsters.json / encounters.json are the authority on which ids exist; without them, the icon names.
+    const monsters = await loc("monsters");
+    const encounters = await loc("encounters");
+    const names = index.entries.map((e) => BOSS_ICON.exec(e.path)?.[1]).filter((b): b is string => b !== undefined && !b.endsWith("_outline"));
+    for (const name of [...new Set(names)].sort()) {
+      const boss = name.toUpperCase();
+      if (!ID_BODY.test(boss)) continue;
+      const sources: Source[] = [{ image: `images/map/placeholder/${name}_boss_icon.png` }];
+      const encounter = `${boss}_BOSS`;
+      if (!encounters || encounters.has(`${encounter}.title`)) {
+        await add(`ENCOUNTER.${encounter}`, "monster", `${ENCOUNTER_SLUG}${encounter.toLowerCase()}`, sources, encounters?.get(`${encounter}.title`));
+      }
+      for (const m of BOSS_MONSTERS[boss] ?? [boss]) {
+        if (monsters && !monsters.has(`${m}.name`)) continue;
+        await add(`MONSTER.${m}`, "monster", m.toLowerCase(), sources, monsters?.get(`${m}.name`));
+      }
+    }
   }
 
   if (want.has("ui")) {

@@ -5,7 +5,7 @@ const OPTIONS: [string, string, string][] = [
   ["--game-dir <dir>", "Steam's usual folders", "Folder holding the game's .pck. Without it the CLI looks in Steam's default library on macOS, Windows and Linux, plus every library in libraryfolders.vdf."],
   ["--out <dir>", "./public/spire", "Output folder, replaced as a whole on every run, and only if it is empty or was written by this CLI."],
   ["--sizes <list>", "64,128,256", "Icon box sizes in px (at most 16). Each icon is written at every size that does not upscale it, named by its pixel width, so browsers pick one by rendered size and pixel density. Sizes past an image's own size are skipped; the first is written at the image's own size."],
-  ["--kinds <list>", "relic,potion,class,room,ui", "Add card for card portraits."],
+  ["--kinds <list>", "relic,potion,class,room,ui", "Add card for card portraits, monster for boss icons (by encounter and monster id)."],
   ["--fonts", "off", "Also copy the game's fonts, for your local use only."],
 ];
 

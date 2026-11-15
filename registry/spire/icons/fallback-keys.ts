@@ -23,6 +23,10 @@ export function fallbackKeyFor(id: string): FallbackKey {
       return CLASSES.includes(rest) ? (`class.${rest.toLowerCase()}` as FallbackKey) : "class.unknown";
     case "ROOM":
       return ROOMS.includes(rest) ? (`room.${rest.toLowerCase()}` as FallbackKey) : "room.unknown";
+    // A monster's fallback is the enemy room; an encounter's is its room by the id's suffix.
+    case "MONSTER": return "room.monster";
+    case "ENCOUNTER":
+      return rest.endsWith("_BOSS") ? "room.boss" : rest.endsWith("_ELITE") ? "room.elite" : "room.monster";
     case "STAT":
       return STATS.includes(rest) ? (`stat.${rest.toLowerCase()}` as FallbackKey) : "relic";
     default: return "relic";
