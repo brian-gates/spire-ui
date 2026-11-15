@@ -100,18 +100,27 @@ const room = (history: string | null, mapIcon: string | null, title: string, leg
   description: ["map", `LEGEND_${legend}.hoverTip.description`],
 });
 
-/**
- * Ids with one fixed texture each. Rooms prefer the run history icons (what run rows show), else
- * the map icon; there is no generic boss icon (each boss has its own), so ROOM.BOSS stays unmapped.
- */
-const FIXED: FixedId[] = [
-  ...["ironclad", "silent", "defect", "regent", "necrobinder"].map((c) => ({
+/** Characters always listed (null texture when the game lacks the icon); later ones are found by their icon. */
+const KNOWN_CHARACTERS = ["ironclad", "silent", "defect", "regent", "necrobinder"];
+const CHARACTER_ICON = /^images\/ui\/top_panel\/character_icon_([a-z0-9_]+)\.png(?:\.import)?$/;
+
+/** One class item per character: the known ones plus every character whose top panel icon is in the game. */
+function characterItems(paths: readonly string[]): FixedId[] {
+  const found = paths.map((p) => CHARACTER_ICON.exec(p)?.[1]).filter((c): c is string => c !== undefined);
+  return [...new Set([...KNOWN_CHARACTERS, ...found])].sort().map((c) => ({
     id: `CHARACTER.${c.toUpperCase()}`,
     kind: "class" as const,
     sources: [{ image: `images/ui/top_panel/character_icon_${c}.png` }],
     title: ["characters", `${c.toUpperCase()}.title`] as Text,
     description: ["characters", `${c.toUpperCase()}.description`] as Text,
-  })),
+  }));
+}
+
+/**
+ * Ids with one fixed texture each. Rooms prefer the run history icons (what run rows show), else
+ * the map icon; there is no generic boss icon (each boss has its own), so ROOM.BOSS stays unmapped.
+ */
+const FIXED: FixedId[] = [
   { id: "ROOM.MONSTER", kind: "room", ...room("monster", "map_monster", "ROOM_ENEMY", "ENEMY") },
   { id: "ROOM.ELITE", kind: "room", ...room("elite", "map_elite", "ROOM_ELITE", "ELITE") },
   { id: "ROOM.REST", kind: "room", ...room("rest_site", "map_rest", "ROOM_REST", "REST") },
@@ -273,7 +282,7 @@ export async function mapIds(index: PckIndex, read: (e: PckEntry) => Promise<Buf
     }
   }
 
-  for (const f of FIXED) {
+  for (const f of [...characterItems(index.entries.map((e) => e.path)), ...FIXED]) {
     if (!want.has(f.kind)) continue;
     const slug = f.id.slice(f.id.indexOf(".") + 1).toLowerCase();
     const title = f.title ? (await loc(f.title[0]))?.get(f.title[1]) : undefined;

@@ -334,7 +334,10 @@ describe("mapIds", () => {
       { path: ".godot/imported/beta.ctex", data: pngCtex(await solidPng(8, 8, [1, 2, 3]), 8, 8) },
       { path: "images/ui/top_panel/character_icon_ironclad.png.import", data: importFile(".godot/imported/ironclad.ctex") },
       { path: ".godot/imported/ironclad.ctex", data: pngCtex(await solidPng(8, 8, [1, 2, 3]), 8, 8) },
-      { path: "localization/eng/characters.json", data: Buffer.from(JSON.stringify({ "IRONCLAD.title": "The Brawler" })) },
+      // A character the game adds later (not in the CLI's known list) is found by its top panel icon.
+      { path: "images/ui/top_panel/character_icon_fool.png.import", data: importFile(".godot/imported/fool.ctex") },
+      { path: ".godot/imported/fool.ctex", data: pngCtex(await solidPng(8, 8, [4, 5, 6]), 8, 8) },
+      { path: "localization/eng/characters.json", data: Buffer.from(JSON.stringify({ "IRONCLAD.title": "The Brawler", "FOOL.title": "The Fool" })) },
       { path: "images/ui/run_history/monster.png.import", data: importFile(".godot/imported/monster.ctex") },
       { path: "images/atlases/ui_atlas.sprites/map/icons/map_monster.tres", data: atlasTres("images/atlases/ui_atlas_0.png", 0, 0, 8, 8) },
       { path: ".godot/imported/monster.ctex", data: pngCtex(await solidPng(8, 8, [1, 2, 3]), 8, 8) },
@@ -354,6 +357,7 @@ describe("mapIds", () => {
     expect(ids.get("RELIC.MISSING_RELIC")).toMatchObject({ name: "Missing Relic", texture: { entry: { path: ".godot/imported/beta.ctex" } } });
     expect(ids.get("CHARACTER.IRONCLAD")).toMatchObject({ kind: "class", slug: "ironclad", name: "The Brawler", texture: { entry: { path: ".godot/imported/ironclad.ctex" } } });
     expect(ids.get("CHARACTER.SILENT")).toMatchObject({ texture: null });
+    expect(ids.get("CHARACTER.FOOL")).toMatchObject({ kind: "class", slug: "fool", name: "The Fool", texture: { entry: { path: ".godot/imported/fool.ctex" } } });
     expect(ids.get("ROOM.MONSTER")?.texture?.entry.path).toBe(".godot/imported/monster.ctex");
     expect(ids.get("STAT.GOLD")).toMatchObject({ kind: "ui", slug: "gold", texture: { entry: { path: ".godot/imported/ui_atlas.ctex" } } });
     expect(ids.get("STAT.DECK")).toMatchObject({ kind: "ui", slug: "deck", texture: { entry: { path: ".godot/imported/ui_atlas.ctex" } } });
