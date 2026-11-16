@@ -144,8 +144,8 @@ const FIXED: FixedId[] = [
 
 /**
  * Boss map icons: the game has no portrait per monster (monsters are Spine skeletons), but each boss
- * encounter has a map icon, images/map/placeholder/<name>_boss_icon.png (white on transparent; the
- * `_outline` variant is its outline). It belongs to the encounter <NAME>_BOSS and is given to that
+ * encounter has a map icon, images/map/placeholder/<name>_boss_icon.png (white on transparent; its
+ * `<name>_boss_icon_outline.png` outline variant never matches BOSS_ICON). It belongs to the encounter <NAME>_BOSS and is given to that
  * encounter's monsters. A few bosses' monsters are not named after the encounter; they are listed
  * here (from the game's code). Others get the monster of the same name.
  * Some bosses (Ceremonial Beast, Queen, The Insatiable) have an animated map node instead: a Spine
@@ -312,7 +312,7 @@ export async function mapIds(index: PckIndex, read: (e: PckEntry) => Promise<Buf
     // monsters.json / encounters.json are the authority on which ids exist; without them, the icon names.
     const monsters = await loc("monsters");
     const encounters = await loc("encounters");
-    const names = index.entries.map((e) => BOSS_ICON.exec(e.path)?.[1]).filter((b): b is string => b !== undefined && !b.endsWith("_outline"));
+    const names = index.entries.map((e) => BOSS_ICON.exec(e.path)?.[1]).filter((b): b is string => b !== undefined);
     for (const name of [...new Set(names)].sort()) {
       const boss = name.toUpperCase();
       if (!ID_BODY.test(boss)) continue;
