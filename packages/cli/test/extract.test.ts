@@ -334,7 +334,11 @@ describe("mapIds", () => {
       { path: ".godot/imported/beta.ctex", data: pngCtex(await solidPng(8, 8, [1, 2, 3]), 8, 8) },
       { path: "images/ui/top_panel/character_icon_ironclad.png.import", data: importFile(".godot/imported/ironclad.ctex") },
       { path: ".godot/imported/ironclad.ctex", data: pngCtex(await solidPng(8, 8, [1, 2, 3]), 8, 8) },
-      { path: "localization/eng/characters.json", data: Buffer.from(JSON.stringify({ "IRONCLAD.title": "The Brawler" })) },
+      // A character the game adds later (not in the CLI's known list) is found by its top panel icon.
+      { path: "images/ui/top_panel/character_icon_fool.png.import", data: importFile(".godot/imported/fool.ctex") },
+      { path: ".godot/imported/fool.ctex", data: pngCtex(await solidPng(8, 8, [4, 5, 6]), 8, 8) },
+      { path: "images/ui/top_panel/character_icon_fool_outline.png.import", data: importFile(".godot/imported/fool.ctex") },
+      { path: "localization/eng/characters.json", data: Buffer.from(JSON.stringify({ "IRONCLAD.title": "The Brawler", "FOOL.title": "The Fool" })) },
       { path: "images/ui/run_history/monster.png.import", data: importFile(".godot/imported/monster.ctex") },
       { path: "images/atlases/ui_atlas.sprites/map/icons/map_monster.tres", data: atlasTres("images/atlases/ui_atlas_0.png", 0, 0, 8, 8) },
       { path: ".godot/imported/monster.ctex", data: pngCtex(await solidPng(8, 8, [1, 2, 3]), 8, 8) },
@@ -354,6 +358,8 @@ describe("mapIds", () => {
     expect(ids.get("RELIC.MISSING_RELIC")).toMatchObject({ name: "Missing Relic", texture: { entry: { path: ".godot/imported/beta.ctex" } } });
     expect(ids.get("CHARACTER.IRONCLAD")).toMatchObject({ kind: "class", slug: "ironclad", name: "The Brawler", texture: { entry: { path: ".godot/imported/ironclad.ctex" } } });
     expect(ids.get("CHARACTER.SILENT")).toMatchObject({ texture: null });
+    expect(ids.has("CHARACTER.FOOL_OUTLINE")).toBe(false);
+    expect(ids.get("CHARACTER.FOOL")).toMatchObject({ kind: "class", slug: "fool", name: "The Fool", texture: { entry: { path: ".godot/imported/fool.ctex" } } });
     expect(ids.get("ROOM.MONSTER")?.texture?.entry.path).toBe(".godot/imported/monster.ctex");
     expect(ids.get("STAT.GOLD")).toMatchObject({ kind: "ui", slug: "gold", texture: { entry: { path: ".godot/imported/ui_atlas.ctex" } } });
     expect(ids.get("STAT.DECK")).toMatchObject({ kind: "ui", slug: "deck", texture: { entry: { path: ".godot/imported/ui_atlas.ctex" } } });
@@ -362,6 +368,56 @@ describe("mapIds", () => {
       expect(id).toMatch(/^[A-Z]+(?:\.[A-Z0-9_]+)+$/);
       expect(m.slug).toMatch(/^[a-z0-9_-]+$/);
     }
+  });
+
+  test("--kinds monster: each boss map icon goes to its encounter and that encounter's monsters", async () => {
+    const icon = async (name: string, rgb: [number, number, number]): Promise<FakeFile[]> => [
+      { path: `images/map/placeholder/${name}.png.import`, data: importFile(`.godot/imported/${name}.ctex`) },
+      { path: `.godot/imported/${name}.ctex`, data: pngCtex(await solidPng(8, 8, rgb), 8, 8) },
+    ];
+    const files = [
+      ...(await gameFiles()),
+      ...(await icon("gloom_bat_boss_icon", [1, 2, 3])),
+      // The outline variant is the same boss, not another one.
+      ...(await icon("gloom_bat_boss_icon_outline", [4, 5, 6])),
+      // A boss whose monsters are not named after it (the game's Kin: a priest and its followers).
+      ...(await icon("the_kin_boss_icon", [7, 8, 9])),
+      // A boss icon the localization does not name: no ids for it.
+      ...(await icon("cut_boss_boss_icon", [1, 1, 1])),
+      // Invented names in the game's localization format.
+      { path: "localization/eng/monsters.json", data: Buffer.from(JSON.stringify({ "GLOOM_BAT.name": "Gloom Bat", "KIN_PRIEST.name": "Kin Elder", "KIN_FOLLOWER.name": "Kin Acolyte" })) },
+      { path: "localization/eng/encounters.json", data: Buffer.from(JSON.stringify({ "GLOOM_BAT_BOSS.title": "The Gloom", "THE_KIN_BOSS.title": "The Kin" })) },
+    ];
+    const file = path.join(tmp, "bosses.pck");
+    fs.writeFileSync(file, buildPck({ files }));
+    const index = await readPckIndex(file);
+    const ids = await mapIds(index, (e) => readPckFile(file, e), ["monster"]);
+
+    expect([...ids.keys()].sort()).toEqual(["ENCOUNTER.GLOOM_BAT_BOSS", "ENCOUNTER.THE_KIN_BOSS", "MONSTER.GLOOM_BAT", "MONSTER.KIN_FOLLOWER", "MONSTER.KIN_PRIEST"]);
+    expect(ids.get("MONSTER.GLOOM_BAT")).toMatchObject({ kind: "monster", slug: "gloom_bat", name: "Gloom Bat", texture: { entry: { path: ".godot/imported/gloom_bat_boss_icon.ctex" } } });
+    expect(ids.get("ENCOUNTER.GLOOM_BAT_BOSS")).toMatchObject({ kind: "monster", slug: "encounter-gloom_bat_boss", name: "The Gloom", texture: { entry: { path: ".godot/imported/gloom_bat_boss_icon.ctex" } } });
+    for (const id of ["MONSTER.KIN_PRIEST", "MONSTER.KIN_FOLLOWER", "ENCOUNTER.THE_KIN_BOSS"]) {
+      expect(ids.get(id)?.texture?.entry.path, id).toBe(".godot/imported/the_kin_boss_icon.ctex");
+    }
+    expect(ids.get("MONSTER.KIN_PRIEST")?.name).toBe("Kin Elder");
+
+    // Not a default kind: the kit's components don't use it.
+    expect([...(await mapIds(index, (e) => readPckFile(file, e))).keys()].some((id) => id.startsWith("MONSTER.") || id.startsWith("ENCOUNTER."))).toBe(false);
+
+    // Extracted, they resolve by id under the monster kind, one file set per id.
+    const game = path.join(tmp, `game-${n++}`);
+    fs.mkdirSync(game);
+    fs.writeFileSync(path.join(game, PCK_NAME), buildPck({ files }));
+    const out = outDir("bosses");
+    const summary = await extract({ pck: path.join(game, PCK_NAME), out, sizes: [8], kinds: ["monster"], fonts: false });
+    expect(summary.counts.monster).toBe(5);
+    expect(fs.readdirSync(path.join(out, "monster")).sort()).toEqual([
+      "encounter-gloom_bat_boss@8.webp", "encounter-the_kin_boss@8.webp", "gloom_bat@8.webp", "kin_follower@8.webp", "kin_priest@8.webp",
+    ]);
+    const manifest = parseManifest(JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8")));
+    expect(resolveAsset("MONSTER.KIN_FOLLOWER", manifest, "/spire")).toMatchObject({ source: "extracted", src: "/spire/monster/kin_follower@8.webp", name: "Kin Acolyte" });
+    expect(resolveAsset("ENCOUNTER.THE_KIN_BOSS", manifest, "/spire")).toMatchObject({ source: "extracted", name: "The Kin" });
+    expect(resolveAsset("MONSTER.NOBODY", manifest, "/spire")).toMatchObject({ source: "fallback", fallback: "room.monster" });
   });
 
   test("only the requested kinds are mapped", async () => {

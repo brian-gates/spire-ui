@@ -21,7 +21,7 @@ npx spire-ui extract-art --kinds card --sizes 64,128,256,512  # card art (up to 
 | `--game-dir <dir>` | Steam's usual folders | Folder holding `Slay the Spire 2.pck` (on macOS the game folder or `SlayTheSpire2.app/Contents/Resources`). Without it the CLI looks in Steam's default library on macOS, Windows and Linux, plus every library listed in Steam's `libraryfolders.vdf`. |
 | `--out <dir>` | `./public/spire` | Output folder, replaced as a whole on every run. |
 | `--sizes <list>` | `64,128,256` | Icon box sizes in px (up to 4096, at most 16 sizes), e.g. `64,128,256,512` for card art. Each icon is written once per size so browsers can pick one by rendered size and pixel density ([responsive sizes](#responsive-sizes)). Icons keep their aspect ratio and are never upscaled: sizes past an image's own size are skipped, and the first of them is written at the image's own size, so every icon has at least one file. |
-| `--kinds <list>` | `relic,potion,class,room,ui` | Add `card` for card portraits plus [card stats](#card-stats) (off by default: no v1 component needs them). |
+| `--kinds <list>` | `relic,potion,class,room,ui` | Add `card` for card portraits plus [card stats](#card-stats), and `monster` for boss icons (both off by default: no v1 component needs them). The game has no per-monster portraits; `monster` writes each boss's map icon (white on transparent, for tinting) under its encounter (`ENCOUNTER.VANTOM_BOSS`) and that encounter's monsters (`MONSTER.VANTOM`; the Kaiser Crab's `MONSTER.CRUSHER` and `MONSTER.ROCKET`). Bosses whose map node is animated have none. |
 | `--fonts` | off | Also copy the game's fonts. |
 
 Exit codes: `0` done, `2` a problem with the input (game not found, not a Godot 4 pack, encrypted

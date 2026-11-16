@@ -1,7 +1,7 @@
 // The manifest `extract-art` writes. A copy of the resolver's types in
 // registry/spire/lib/assets.ts (the CLI ships separately from that copy-in code);
 // test/manifest-sync.test.ts fails if the two drift apart.
-export type AssetKind = "relic" | "potion" | "card" | "class" | "room" | "ui";
+export type AssetKind = "relic" | "potion" | "card" | "class" | "room" | "monster" | "ui";
 /** One of a card's numbers. `computed`: the game recalculates it at runtime (base shown when known). */
 export interface CardVar {
   base?: number; upgraded?: number; computed?: boolean;
@@ -69,4 +69,4 @@ export interface SpireManifest {
   cardLayout?: CardLayout;
 }
 
-export const ASSET_KINDS: readonly AssetKind[] = ["relic", "potion", "card", "class", "room", "ui"];
+export const ASSET_KINDS: readonly AssetKind[] = ["relic", "potion", "card", "class", "room", "monster", "ui"];

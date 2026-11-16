@@ -100,18 +100,28 @@ const room = (history: string | null, mapIcon: string | null, title: string, leg
   description: ["map", `LEGEND_${legend}.hoverTip.description`],
 });
 
-/**
- * Ids with one fixed texture each. Rooms prefer the run history icons (what run rows show), else
- * the map icon; there is no generic boss icon (each boss has its own), so ROOM.BOSS stays unmapped.
- */
-const FIXED: FixedId[] = [
-  ...["ironclad", "silent", "defect", "regent", "necrobinder"].map((c) => ({
+/** Characters always listed (null texture when the game lacks the icon); later ones are found by their icon. */
+const KNOWN_CHARACTERS = ["ironclad", "silent", "defect", "regent", "necrobinder"];
+const CHARACTER_ICON = /^images\/ui\/top_panel\/character_icon_([a-z0-9_]+)\.png(?:\.import)?$/;
+
+/** One class item per character: the known ones plus every character whose top panel icon is in the game. */
+function characterItems(paths: readonly string[]): FixedId[] {
+  // character_icon_<name>_outline.png is the same character's outline variant, not a character.
+  const found = paths.map((p) => CHARACTER_ICON.exec(p)?.[1]).filter((c): c is string => c !== undefined && !c.endsWith("_outline"));
+  return [...new Set([...KNOWN_CHARACTERS, ...found])].sort().map((c) => ({
     id: `CHARACTER.${c.toUpperCase()}`,
     kind: "class" as const,
     sources: [{ image: `images/ui/top_panel/character_icon_${c}.png` }],
     title: ["characters", `${c.toUpperCase()}.title`] as Text,
     description: ["characters", `${c.toUpperCase()}.description`] as Text,
-  })),
+  }));
+}
+
+/**
+ * Ids with one fixed texture each. Rooms prefer the run history icons (what run rows show), else
+ * the map icon; there is no generic boss icon (each boss has its own), so ROOM.BOSS stays unmapped.
+ */
+const FIXED: FixedId[] = [
   { id: "ROOM.MONSTER", kind: "room", ...room("monster", "map_monster", "ROOM_ENEMY", "ENEMY") },
   { id: "ROOM.ELITE", kind: "room", ...room("elite", "map_elite", "ROOM_ELITE", "ELITE") },
   { id: "ROOM.REST", kind: "room", ...room("rest_site", "map_rest", "ROOM_REST", "REST") },
@@ -131,6 +141,23 @@ const FIXED: FixedId[] = [
   { id: "STAT.ASCENSION", kind: "ui", sources: [ui("top_bar/top_bar_ascension")] },
   { id: "STAT.DECK", kind: "ui", sources: [ui("top_bar/top_bar_deck")] },
 ];
+
+/**
+ * Boss map icons: the game has no portrait per monster (monsters are Spine skeletons), but each boss
+ * encounter has a map icon, images/map/placeholder/<name>_boss_icon.png (white on transparent; its
+ * `<name>_boss_icon_outline.png` outline variant never matches BOSS_ICON). It belongs to the encounter <NAME>_BOSS and is given to that
+ * encounter's monsters. A few bosses' monsters are not named after the encounter; they are listed
+ * here (from the game's code). Others get the monster of the same name.
+ * Some bosses (Ceremonial Beast, Queen, The Insatiable) have an animated map node instead: a Spine
+ * parts atlas, not a picture, so they get no icon.
+ */
+const BOSS_ICON = /^images\/map\/placeholder\/([a-z0-9_]+)_boss_icon\.png\.import$/;
+const BOSS_MONSTERS: Readonly<Record<string, readonly string[]>> = {
+  KAISER_CRAB: ["CRUSHER", "ROCKET"],
+  THE_KIN: ["KIN_PRIEST", "KIN_FOLLOWER"],
+};
+/** Encounter slugs carry this prefix so they can never collide with a monster's (ids have no `-`). */
+const ENCOUNTER_SLUG = "encounter-";
 
 interface Collection {
   kind: AssetKind;
@@ -273,12 +300,32 @@ export async function mapIds(index: PckIndex, read: (e: PckEntry) => Promise<Buf
     }
   }
 
-  for (const f of FIXED) {
+  for (const f of [...characterItems(index.entries.map((e) => e.path)), ...FIXED]) {
     if (!want.has(f.kind)) continue;
     const slug = f.id.slice(f.id.indexOf(".") + 1).toLowerCase();
     const title = f.title ? (await loc(f.title[0]))?.get(f.title[1]) : undefined;
     const description = f.description ? (await loc(f.description[0]))?.get(f.description[1]) : undefined;
     await add(f.id, f.kind, slug, f.sources, title, description);
+  }
+
+  if (want.has("monster")) {
+    // monsters.json / encounters.json are the authority on which ids exist; without them, the icon names.
+    const monsters = await loc("monsters");
+    const encounters = await loc("encounters");
+    const names = index.entries.map((e) => BOSS_ICON.exec(e.path)?.[1]).filter((b): b is string => b !== undefined);
+    for (const name of [...new Set(names)].sort()) {
+      const boss = name.toUpperCase();
+      if (!ID_BODY.test(boss)) continue;
+      const sources: Source[] = [{ image: `images/map/placeholder/${name}_boss_icon.png` }];
+      const encounter = `${boss}_BOSS`;
+      if (!encounters || encounters.has(`${encounter}.title`)) {
+        await add(`ENCOUNTER.${encounter}`, "monster", `${ENCOUNTER_SLUG}${encounter.toLowerCase()}`, sources, encounters?.get(`${encounter}.title`));
+      }
+      for (const m of BOSS_MONSTERS[boss] ?? [boss]) {
+        if (monsters && !monsters.has(`${m}.name`)) continue;
+        await add(`MONSTER.${m}`, "monster", m.toLowerCase(), sources, monsters?.get(`${m}.name`));
+      }
+    }
   }
 
   if (want.has("ui")) {

@@ -51,6 +51,7 @@ const fixture = {
     "CARD.Z": { kind: "card", file: "card/z@64.webp", w: 64, h: 48, card: { cost: null, type: "Curse", rarity: "Curse" } },
     "CHARACTER.X": { kind: "class", file: "class/x@64.webp", w: 64, h: 64 },
     "ROOM.X": { kind: "room", file: "room/x@64.webp", w: 64, h: 64 },
+    "MONSTER.X": { kind: "monster", file: "monster/x@64.webp", w: 64, h: 64, name: "X" },
     "STAT.X": { kind: "ui", file: "ui/x@64.webp", w: 64, h: 64 },
     "UI.HOVER_TIP": { kind: "ui", file: "ui/hover_tip@320.webp", w: 320, h: 96, widths: [80, 160, 320], slice: { left: 55, top: 43, right: 72, bottom: 21 } },
   },
