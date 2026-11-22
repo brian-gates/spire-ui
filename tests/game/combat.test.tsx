@@ -66,8 +66,9 @@ describe("SourceBar", () => {
 describe("RoundCard", () => {
   it("is a section named by its heading, with totals and a split bar", () => {
     render(<RoundCard round={2} dealt={3} taken={15}><LogRow amount="3">Lightning</LogRow></RoundCard>);
-    const card = screen.getByRole("region", { name: "Round 2" });
-    expect(within(card).getByRole("heading", { level: 3, name: "Round 2" })).toBeTruthy();
+    const card = screen.getByRole("heading", { level: 3, name: "Round 2" }).closest("section")!;
+    // Not a named region: a long fight shouldn't add a landmark per round.
+    expect(screen.queryByRole("region")).toBeNull();
     expect(card.textContent).toContain("3 dealt");
     expect(card.textContent).toContain("15 taken");
     const split = within(card).getByRole("img", { name: "Dealt 17%, taken 83%" });
@@ -125,7 +126,7 @@ describe("CombatLog", () => {
     );
     expect(screen.getByRole("heading", { level: 2, name: "Combat log" })).toBeTruthy();
     expect(screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual(["Round 1", "Round 2"]);
-    const r1 = screen.getByRole("region", { name: "Round 1" });
+    const r1 = screen.getByRole("heading", { level: 3, name: "Round 1" }).closest("section")!;
     expect(within(r1).getAllByRole("listitem").map((li) => li.children[1]!.textContent)).toEqual(["Strike → Leaf Slime (M)", "Twig Slime (S)"]);
   });
   it("says so when there are no rounds", () => {

@@ -606,6 +606,7 @@
         "react"
       ],
       "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
         "https://brian-gates.github.io/spire-ui/r/spire-utils.json",
         "https://brian-gates.github.io/spire-ui/r/spire-combat-tones.json",
         "https://brian-gates.github.io/spire-ui/r/spire-round-card.json",

@@ -6,7 +6,8 @@ import { clampFraction, type CombatTone, TONE_AMOUNT, TONE_BAR } from "../lib/co
  * One combat log line as a table row: icon | text | amount (bold, right-aligned) | bar, the bar in its own
  * column so it never sits behind the text. `fraction` (0..1) is the amount over the largest single amount
  * the log scales to; with no amount (a potion line) the bar cell stays empty. `accent` (any CSS colour or
- * gradient) adds a thin stripe before the icon, e.g. the player's colour in co-op.
+ * gradient) adds a thin stripe before the icon, e.g. the player's colour in co-op. The stripe sits 8px
+ * left of the row, in its container's padding (RoundCard has 12px), so a bare list needs left padding.
  * Renders an `li`; place it inside RoundCard (or another `ol`/`ul`). Narrow containers get a narrower
  * bar column; a `@container` ancestor (RoundCard is one) sets the width it adapts to.
  */
