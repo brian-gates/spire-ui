@@ -9,6 +9,11 @@
   --color-spire-gold: #f0c75e;
   --color-spire-hp: #ff8a7d;
   --color-spire-energy: #5fb0e8;
+  /* Combat stats: damage dealt, damage taken, HP a Buffer saved, HP healed. */
+  --color-spire-dealt: #7fc4ef;
+  --color-spire-taken: #ef6a62;
+  --color-spire-saved: #8cc8ff;
+  --color-spire-healed: #7fd47c;
   --color-class-ironclad: #ec6a5e;
   --color-class-silent: #6fbf68;
   --color-class-defect: #5fb0e8;

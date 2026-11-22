@@ -54,6 +54,8 @@ Primitives: Badge, Banner, Button, Dialog, Divider, Panel, SpireIcon, Tabs, Tool
 
 Game components: CardFrame, GameCard, ClassBadge, MapNode, PlayerRow, PotionSlots, RelicStrip, RunHeader, RunRow, StatHP, StatGold, StatEnergy, StatDeck.
 
+Combat stats: StatTile, SourceBar, RoundCard, LogRow and CombatLog, coloured by the theme's dealt, taken, saved and healed tokens.
+
 Each component page in the docs lists its own install command.
 
 ## Your own game art (optional)

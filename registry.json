@@ -496,6 +496,129 @@
           "target": "~/lib/spire/game/map-node.tsx"
         }
       ]
+    },
+    {
+      "name": "spire-combat-tones",
+      "type": "registry:lib",
+      "title": "Combat tones",
+      "description": "Shared colours for the combat stats components: dealt, taken, saved, healed.",
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/lib/combat-tones.ts",
+          "type": "registry:lib",
+          "target": "~/lib/spire/lib/combat-tones.ts"
+        }
+      ]
+    },
+    {
+      "name": "spire-stat-tile",
+      "type": "registry:ui",
+      "title": "StatTile",
+      "description": "A combat total as a tinted tile: label over a big number in the tone's colour.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-combat-tones.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/stat-tile.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/stat-tile.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-source-bar",
+      "type": "registry:ui",
+      "title": "SourceBar",
+      "description": "A damage source row: icon, name, bold amount and a thin bar underneath.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-combat-tones.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/source-bar.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/source-bar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-round-card",
+      "type": "registry:ui",
+      "title": "RoundCard",
+      "description": "A combat round as a card: heading, dealt and taken totals, a split bar, then its lines.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-combat-tones.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/round-card.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/round-card.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-log-row",
+      "type": "registry:ui",
+      "title": "LogRow",
+      "description": "A combat log line: icon, text, amount and a bar in its own column.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-combat-tones.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/log-row.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/log-row.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spire-combat-log",
+      "type": "registry:ui",
+      "title": "CombatLog",
+      "description": "A whole combat log: a heading and one RoundCard of LogRows per round.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-combat-tones.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-round-card.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-log-row.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/combat-log.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/combat-log.tsx"
+        }
+      ]
     }
   ]
 }
