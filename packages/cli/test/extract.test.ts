@@ -420,6 +420,53 @@ describe("mapIds", () => {
     expect(resolveAsset("MONSTER.NOBODY", manifest, "/spire")).toMatchObject({ source: "fallback", fallback: "room.monster" });
   });
 
+  test("--kinds orb: every orb image under ORB.<NAME>, named from orbs.json by its model id", async () => {
+    const orb = async (name: string, rgb: [number, number, number]): Promise<FakeFile[]> => [
+      { path: `images/orbs/${name}.png.import`, data: importFile(`.godot/imported/${name}.ctex`) },
+      { path: `.godot/imported/${name}.ctex`, data: pngCtex(await solidPng(8, 8, rgb), 8, 8) },
+    ];
+    const files = [
+      ...(await gameFiles()),
+      ...(await orb("spark_orb", [1, 2, 3])),
+      ...(await orb("void_orb", [4, 5, 6])),
+      // The empty slot has art but no orb in the localization: extracted, unnamed.
+      ...(await orb("empty_orb", [7, 8, 9])),
+      // Not an orb image (no _orb suffix).
+      ...(await orb("orb_glow", [1, 1, 1])),
+      // Invented names in the game's localization format; an orb with no art gets no id.
+      {
+        path: "localization/eng/orbs.json",
+        data: Buffer.from(JSON.stringify({ "SPARK_ORB.title": "Spark", "SPARK_ORB.description": "Orb: Deals [gold]damage[/gold].", "VOID_ORB.title": "Void", "MOCK_ORB.title": "Mock" })),
+      },
+    ];
+    const file = path.join(tmp, "orbs.pck");
+    fs.writeFileSync(file, buildPck({ files }));
+    const index = await readPckIndex(file);
+    const ids = await mapIds(index, (e) => readPckFile(file, e), ["orb"]);
+
+    expect([...ids.keys()].sort()).toEqual(["ORB.EMPTY", "ORB.SPARK", "ORB.VOID"]);
+    expect(ids.get("ORB.SPARK")).toMatchObject({ kind: "orb", slug: "spark", name: "Spark", description: "Orb: Deals damage.", texture: { entry: { path: ".godot/imported/spark_orb.ctex" } } });
+    expect(ids.get("ORB.VOID")).toMatchObject({ kind: "orb", slug: "void", name: "Void" });
+    expect(ids.get("ORB.EMPTY")).toMatchObject({ kind: "orb", slug: "empty", texture: { entry: { path: ".godot/imported/empty_orb.ctex" } } });
+    expect(ids.get("ORB.EMPTY")?.name).toBeUndefined();
+
+    // Not a default kind.
+    expect([...(await mapIds(index, (e) => readPckFile(file, e))).keys()].some((id) => id.startsWith("ORB."))).toBe(false);
+
+    const game = path.join(tmp, `game-${n++}`);
+    fs.mkdirSync(game);
+    fs.writeFileSync(path.join(game, PCK_NAME), buildPck({ files }));
+    const out = outDir("orbs");
+    const summary = await extract({ pck: path.join(game, PCK_NAME), out, sizes: [8], kinds: ["orb"], fonts: false });
+    expect(summary.counts.orb).toBe(3);
+    expect(fs.readdirSync(path.join(out, "orb")).sort()).toEqual(["empty@8.webp", "spark@8.webp", "void@8.webp"]);
+    const manifest = parseManifest(JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8")));
+    expect(manifest?.items["ORB.SPARK"]).toMatchObject({ kind: "orb", file: "orb/spark@8.webp" });
+    expect(resolveAsset("ORB.SPARK", manifest, "/spire")).toMatchObject({ source: "extracted", src: "/spire/orb/spark@8.webp", name: "Spark" });
+    expect(resolveAsset("ORB.EMPTY", manifest, "/spire")).toMatchObject({ source: "extracted", name: "Empty" });
+    expect(resolveAsset("ORB.NONE", manifest, "/spire")).toMatchObject({ source: "fallback", fallback: "class.defect" });
+  });
+
   test("only the requested kinds are mapped", async () => {
     const file = path.join(tmp, "kinds.pck");
     fs.writeFileSync(file, buildPck({ files: await gameFiles() }));

@@ -27,6 +27,7 @@ describe("kindOf", () => {
     expect(kindOf("CARD.X")).toBe("card");
     expect(kindOf("MONSTER.X")).toBe("monster");
     expect(kindOf("ENCOUNTER.X_BOSS")).toBe("monster");
+    expect(kindOf("ORB.LIGHTNING")).toBe("orb");
     expect(kindOf("STAT.HP")).toBe("ui");
   });
   it("ignores inherited Object.prototype names", () => {

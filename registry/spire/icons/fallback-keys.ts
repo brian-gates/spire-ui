@@ -27,6 +27,8 @@ export function fallbackKeyFor(id: string): FallbackKey {
     case "MONSTER": return "room.monster";
     case "ENCOUNTER":
       return rest.endsWith("_BOSS") ? "room.boss" : rest.endsWith("_ELITE") ? "room.elite" : "room.monster";
+    // Orbs are the Defect's; there is no orb glyph.
+    case "ORB": return "class.defect";
     case "STAT":
       return STATS.includes(rest) ? (`stat.${rest.toLowerCase()}` as FallbackKey) : "relic";
     default: return "relic";

@@ -159,6 +159,13 @@ const BOSS_MONSTERS: Readonly<Record<string, readonly string[]>> = {
 /** Encounter slugs carry this prefix so they can never collide with a monster's (ids have no `-`). */
 const ENCOUNTER_SLUG = "encounter-";
 
+/**
+ * The Defect's orbs: images/orbs/<name>_orb.png, one per orb plus the empty slot (`empty_orb`). The
+ * orb's model id is <NAME>_ORB (orbs.json titles it "Lightning"); its art id drops the suffix,
+ * ORB.LIGHTNING. Every image is extracted, named from orbs.json where it has the orb.
+ */
+const ORB_IMAGE = /^images\/orbs\/([a-z0-9_]+)_orb\.png\.import$/;
+
 interface Collection {
   kind: AssetKind;
   prefix: string;
@@ -325,6 +332,16 @@ export async function mapIds(index: PckIndex, read: (e: PckEntry) => Promise<Buf
         if (monsters && !monsters.has(`${m}.name`)) continue;
         await add(`MONSTER.${m}`, "monster", m.toLowerCase(), sources, monsters?.get(`${m}.name`));
       }
+    }
+  }
+
+  if (want.has("orb")) {
+    const orbs = await loc("orbs");
+    const names = index.entries.map((e) => ORB_IMAGE.exec(e.path)?.[1]).filter((o): o is string => o !== undefined);
+    for (const name of [...new Set(names)].sort()) {
+      const orb = name.toUpperCase();
+      if (!ID_BODY.test(orb)) continue;
+      await add(`ORB.${orb}`, "orb", name, [{ image: `images/orbs/${name}_orb.png` }], orbs?.get(`${orb}_ORB.title`), orbs?.get(`${orb}_ORB.description`));
     }
   }
 
