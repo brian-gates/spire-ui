@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 const COLORS = [
   "spire-bg", "spire-panel", "spire-panel-edge", "spire-ink", "spire-muted", "spire-gold", "spire-hp", "spire-energy",
+  "spire-dealt", "spire-taken", "spire-saved", "spire-healed",
   "class-ironclad", "class-silent", "class-defect", "class-regent", "class-necrobinder",
   "rarity-common", "rarity-uncommon", "rarity-rare", "rarity-boss", "rarity-event", "rarity-starter",
 ];

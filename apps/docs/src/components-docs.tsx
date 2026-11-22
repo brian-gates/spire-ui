@@ -10,6 +10,11 @@ import { RelicStrip } from "@spire/game/relic-strip";
 import { RunHeader } from "@spire/game/run-header";
 import { RunRow, type RunView } from "@spire/game/run-row";
 import { StatEnergy, StatGold, StatHP } from "@spire/game/stat";
+import { StatTile, StatTiles } from "@spire/game/stat-tile";
+import { SourceBar } from "@spire/game/source-bar";
+import { RoundCard } from "@spire/game/round-card";
+import { LogRow } from "@spire/game/log-row";
+import { CombatLog, type CombatLogRound } from "@spire/game/combat-log";
 import { Badge } from "@spire/ui/badge";
 import { Banner } from "@spire/ui/banner";
 import { Button } from "@spire/ui/button";
@@ -47,6 +52,29 @@ const bo: RunPlayerView = {
 };
 const run: RunView = { id: "r", act: 2, floor: 21, ascension: 2, mode: "regular", savedAt: ago(3), savedBy: "Bo", players: [ayla, bo] };
 const fortyRelics: RunView = { ...run, id: "40", players: [{ ...ayla, name: "Wolfeschlegelsteinhausen-Bergerd", relics: relics(40) }] };
+
+// One single-player fight in the game's short line forms, for the combat stats demos.
+const heal = <span className="font-spire-display text-lg font-bold text-spire-healed">+</span>;
+const strike = <SpireIcon id="CARD.STRIKE_IRONCLAD" size={22} />;
+const fightRounds: CombatLogRound[] = [
+  {
+    round: 1, dealt: 9, taken: 4,
+    rows: [
+      { key: 1, icon: strike, text: "Strike → Leaf Slime (M)", amount: "6", tone: "dealt", fraction: 6 / 11 },
+      { key: 2, text: "Lightning → Leaf Slime (M)", amount: "3", tone: "dealt", fraction: 3 / 11 },
+      { key: 3, text: "Twig Slime (S)", amount: "4", tone: "taken", fraction: 4 / 11 },
+    ],
+  },
+  {
+    round: 2, dealt: 3, taken: 15,
+    rows: [
+      { key: 4, icon: heal, text: "", amount: "+6", tone: "healed", fraction: 6 / 11 },
+      { key: 5, text: "Lightning → Twig Slime (S)", amount: "3", tone: "dealt", fraction: 3 / 11 },
+      { key: 6, text: "Twig Slime (M)", amount: "11 saved", tone: "saved", fraction: 1 },
+      { key: 7, text: "Leaf Slime (M)", amount: "8", tone: "taken", fraction: 8 / 11 },
+    ],
+  },
+];
 
 export function RunRowDemo() {
   return <RunRow run={run} />;
@@ -254,5 +282,59 @@ export const COMPONENTS: ComponentDoc[] = [
         <MapNode room="shop" state="locked" />
       </div>
     ),
+  },
+  {
+    slug: "stat-tile", name: "StatTile", summary: "A combat total as a tinted tile: a muted label over a big number in its kind's colour. Unknown values render a question mark.",
+    usage: `<StatTiles label="Fight totals">\n  <StatTile label="Dealt" value={12} tone="dealt" />\n  <StatTile label="Taken" value={19} tone="taken" />\n  <StatTile label="Saved" value={11} tone="saved" />\n  <StatTile label="Healed" value={6} tone="healed" />\n</StatTiles>`,
+    Demo: () => (
+      <div className="max-w-xs">
+        <StatTiles label="Fight totals">
+          <StatTile label="Dealt" value={12} tone="dealt" />
+          <StatTile label="Taken" value={19} tone="taken" />
+          <StatTile label="Saved" value={11} tone="saved" />
+          <StatTile label="Healed" value={6} tone="healed" />
+        </StatTiles>
+      </div>
+    ),
+  },
+  {
+    slug: "source-bar", name: "SourceBar", summary: "A damage source: icon where there is art, name, bold amount and a thin bar underneath, coloured by side.",
+    usage: `<ul>\n  <SourceBar name="Strike" amount={6} fraction={6 / 8} icon={<SpireIcon id="CARD.STRIKE_IRONCLAD" size={22} />} />\n  <SourceBar name="Twig Slime (S)" amount={8} fraction={1} tone="taken" />\n</ul>`,
+    Demo: () => (
+      <ul aria-label="Top sources" className="m-0 grid max-w-xs list-none gap-2.5 p-0">
+        <SourceBar name="Strike" amount={6} fraction={6 / 8} icon={strike} />
+        <SourceBar name="Lightning" amount={6} fraction={6 / 8} />
+        <SourceBar name="Twig Slime (S)" amount={8} fraction={1} tone="taken" />
+        <SourceBar name="Leaf Slime (S)" amount={3} fraction={3 / 8} tone="taken" />
+      </ul>
+    ),
+  },
+  {
+    slug: "round-card", name: "RoundCard", summary: "One combat round: its heading, dealt and taken totals, a bar split by their shares, then its lines.",
+    usage: `<RoundCard round={2} dealt={3} taken={15}>\n  <LogRow amount="8" tone="taken" fraction={8 / 11}>Leaf Slime (M)</LogRow>\n</RoundCard>`,
+    Demo: () => (
+      <RoundCard round={2} dealt={3} taken={15}>
+        <LogRow amount="11 saved" tone="saved" fraction={1}>Twig Slime (M)</LogRow>
+        <LogRow amount="8" tone="taken" fraction={8 / 11}>Leaf Slime (M)</LogRow>
+      </RoundCard>
+    ),
+  },
+  {
+    slug: "log-row", name: "LogRow", summary: "A combat log line as a table row: icon, text, amount and a bar in its own column, so bars never sit behind text. Narrow cards get a narrower bar.",
+    usage: `<LogRow icon={<SpireIcon id="CARD.STRIKE_IRONCLAD" size={22} />} amount="6" tone="dealt" fraction={6 / 11}>\n  Strike → Leaf Slime (M)\n</LogRow>`,
+    Demo: () => (
+      <ol className="@container m-0 grid list-none p-0">
+        <LogRow icon={strike} amount="6" tone="dealt" fraction={6 / 11}>Strike → Leaf Slime (M)</LogRow>
+        <LogRow icon={heal} amount="+6" tone="healed" fraction={6 / 11} />
+        <LogRow amount="11 saved" tone="saved" fraction={1}>Twig Slime (M)</LogRow>
+        <LogRow amount="8" tone="taken" fraction={8 / 11}>Leaf Slime (M)</LogRow>
+        <LogRow icon={<SpireIcon id="POTION.FIRE_POTION" size={22} />}>Fire Potion used → Leaf Slime (M)</LogRow>
+      </ol>
+    ),
+  },
+  {
+    slug: "combat-log", name: "CombatLog", summary: "A whole combat log from plain data: a heading, then a RoundCard of LogRows per round.",
+    usage: `<CombatLog rounds={[{ round: 1, dealt: 9, taken: 4, rows: [\n  { key: 1, text: "Strike → Leaf Slime (M)", amount: "6", tone: "dealt", fraction: 6 / 11 },\n  { key: 2, text: "Twig Slime (S)", amount: "4", tone: "taken", fraction: 4 / 11 },\n] }]} />`,
+    Demo: () => <CombatLog rounds={fightRounds} headingLevel={3} />,
   },
 ];
