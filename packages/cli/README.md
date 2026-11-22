@@ -21,7 +21,7 @@ npx spire-ui extract-art --kinds card --sizes 64,128,256,512  # card art (up to 
 | `--game-dir <dir>` | Steam's usual folders | Folder holding `Slay the Spire 2.pck` (on macOS the game folder or `SlayTheSpire2.app/Contents/Resources`). Without it the CLI looks in Steam's default library on macOS, Windows and Linux, plus every library listed in Steam's `libraryfolders.vdf`. |
 | `--out <dir>` | `./public/spire` | Output folder, replaced as a whole on every run. |
 | `--sizes <list>` | `64,128,256` | Icon box sizes in px (up to 4096, at most 16 sizes), e.g. `64,128,256,512` for card art. Each icon is written once per size so browsers can pick one by rendered size and pixel density ([responsive sizes](#responsive-sizes)). Icons keep their aspect ratio and are never upscaled: sizes past an image's own size are skipped, and the first of them is written at the image's own size, so every icon has at least one file. |
-| `--kinds <list>` | `relic,potion,class,room,ui` | Add `card` for card portraits plus [card stats](#card-stats), and `monster` for boss icons (both off by default: no v1 component needs them). The game has no per-monster portraits; `monster` writes each boss's map icon (white on transparent, for tinting) under its encounter (`ENCOUNTER.VANTOM_BOSS`) and that encounter's monsters (`MONSTER.VANTOM`; the Kaiser Crab's `MONSTER.CRUSHER` and `MONSTER.ROCKET`). Bosses whose map node is animated have none. |
+| `--kinds <list>` | `relic,potion,class,room,ui` | Add `card` for card portraits plus [card stats](#card-stats), `monster` for boss icons, and `orb` for the Defect's orbs (all off by default: no v1 component needs them). The game has no per-monster portraits; `monster` writes each boss's map icon (white on transparent, for tinting) under its encounter (`ENCOUNTER.VANTOM_BOSS`) and that encounter's monsters (`MONSTER.VANTOM`; the Kaiser Crab's `MONSTER.CRUSHER` and `MONSTER.ROCKET`). Bosses whose map node is animated have none. `orb` writes each orb's image (`ORB.LIGHTNING`, `ORB.DARK`, `ORB.FROST`, `ORB.GLASS`, `ORB.PLASMA`, and the empty slot as `ORB.EMPTY`). |
 | `--fonts` | off | Also copy the game's fonts. |
 
 Exit codes: `0` done, `2` a problem with the input (game not found, not a Godot 4 pack, encrypted
@@ -110,6 +110,9 @@ What is extracted:
 - `ROOM.MONSTER|ELITE|REST|SHOP|TREASURE|EVENT`: run history room icons; `ROOM.UNKNOWN`: the
   map's `?` icon. `ROOM.BOSS` has no generic icon in the game (each boss has its own), so it keeps
   the fallback.
+- `ORB.*` (with `--kinds orb`): every image in `images/orbs/`, by the orb's model id without its
+  `_ORB` suffix (`LIGHTNING_ORB` is `ORB.LIGHTNING`), named from the game's orbs localization; the
+  empty orb slot is `ORB.EMPTY`, unnamed.
 - `STAT.HP|GOLD|ASCENSION|DECK`: top bar icons; `STAT.ENERGY`: the colourless energy orb.
 - `--fonts`: the game's Kreon Bold and Spectral Bold, as the TrueType files the game embeds (not
   subset or converted), recorded as `fonts.display` and `fonts.body`. They are the game's copies,

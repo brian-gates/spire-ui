@@ -15,6 +15,7 @@ describe("fallbackKeyFor", () => {
     expect(fallbackKeyFor("ENCOUNTER.VANTOM_BOSS")).toBe("room.boss");
     expect(fallbackKeyFor("ENCOUNTER.BYRDONIS_ELITE")).toBe("room.elite");
     expect(fallbackKeyFor("ENCOUNTER.SLUDGE_SPINNER_WEAK")).toBe("room.monster");
+    expect(fallbackKeyFor("ORB.LIGHTNING")).toBe("class.defect");
     expect(fallbackKeyFor("whatever")).toBe("relic");
   });
 });

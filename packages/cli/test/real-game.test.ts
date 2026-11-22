@@ -94,4 +94,14 @@ describe.skipIf(!pck || !dll)("real game install (local only)", () => {
     // Every boss icon found named at least its encounter.
     expect([...ids.keys()].filter((id) => id.startsWith("ENCOUNTER.")).length).toBeGreaterThanOrEqual(9);
   });
+
+  test("orb images go to ORB.<NAME>, the ids Spire Sync maps orb damage to", async () => {
+    const index = await readPckIndex(pck!);
+    const ids = await mapIds(index, (e) => readPckFile(pck!, e), ["orb"]);
+    for (const [id, name] of [["ORB.LIGHTNING", "Lightning"], ["ORB.DARK", "Dark"], ["ORB.FROST", "Frost"], ["ORB.GLASS", "Glass"], ["ORB.PLASMA", "Plasma"]] as const) {
+      expect(ids.get(id), id).toMatchObject({ kind: "orb", name });
+      expect(ids.get(id)?.texture, id).toBeTruthy();
+    }
+    expect(ids.get("ORB.EMPTY")?.texture).toBeTruthy();
+  });
 });

@@ -1,6 +1,6 @@
 import { fallbackKeyFor, type FallbackKey } from "../icons/fallback-keys";
 
-export type AssetKind = "relic" | "potion" | "card" | "class" | "room" | "monster" | "ui";
+export type AssetKind = "relic" | "potion" | "card" | "class" | "room" | "monster" | "orb" | "ui";
 /** One of a card's numbers. `computed`: the game recalculates it at runtime (base shown when known). */
 export interface CardVar {
   base?: number; upgraded?: number; computed?: boolean;
@@ -81,9 +81,9 @@ export type Resolved =
 
 const PREFIX_KINDS = new Map<string, AssetKind>([
   ["CHARACTER", "class"], ["ROOM", "room"], ["RELIC", "relic"], ["POTION", "potion"], ["CARD", "card"],
-  ["MONSTER", "monster"], ["ENCOUNTER", "monster"],
+  ["MONSTER", "monster"], ["ENCOUNTER", "monster"], ["ORB", "orb"],
 ]);
-const ASSET_KINDS: ReadonlySet<string> = new Set<AssetKind>(["relic", "potion", "card", "class", "room", "monster", "ui"]);
+const ASSET_KINDS: ReadonlySet<string> = new Set<AssetKind>(["relic", "potion", "card", "class", "room", "monster", "orb", "ui"]);
 
 export function kindOf(id: string): AssetKind {
   const dot = id.indexOf(".");
