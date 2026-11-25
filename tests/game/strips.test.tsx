@@ -41,14 +41,16 @@ describe("ClassBadge", () => {
 
 describe("stats", () => {
   it("StatHP formats and handles null", () => {
+    // One accessible name; a compact and a full-size bar (only one shown, by row width) carry the text.
     render(<StatHP current={72} max={92} />);
-    expect(screen.getByText("72/92")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "HP: 72/92" })).toBeTruthy();
+    expect(screen.getAllByText("72/92")).toHaveLength(2);
     cleanup();
     render(<StatHP current={null} max={92} />);
-    expect(screen.getByText("?/92")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "HP: ?/92" })).toBeTruthy();
     cleanup();
     render(<StatHP current={null} max={null} />);
-    expect(screen.getByText("?/?")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "HP: unknown" })).toBeTruthy();
   });
   it("StatGold and StatEnergy show values or ?", () => {
     render(<><StatGold value={133} /><StatEnergy value={null} /></>);
