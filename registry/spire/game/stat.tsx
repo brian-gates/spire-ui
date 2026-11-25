@@ -1,6 +1,6 @@
 import { SpireIcon } from "../ui/spire-icon";
 import { cn } from "../lib/cn";
-import { HpBar } from "./hp-bar";
+import { HpBar, show } from "./hp-bar";
 
 function Stat(props: { icon: string; label: string; text: string; known: boolean; tone: string; size?: number }) {
   return (
@@ -18,7 +18,6 @@ function Stat(props: { icon: string; label: string; text: string; known: boolean
   );
 }
 
-const show = (n: number | null) => (n === null ? "?" : String(n));
 
 /** Hit points as a game-style bar with "current/max" on it; an unknown side renders "?". */
 export function StatHP(props: { current: number | null; max: number | null }) {

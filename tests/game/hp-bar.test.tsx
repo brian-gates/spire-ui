@@ -27,7 +27,6 @@ describe("HpBar", () => {
   it("shows ? for unknown values, with no fill", () => {
     const both = render(<HpBar current={null} max={null} />);
     expect(screen.getByText("?/?")).toBeTruthy();
-    expect(screen.getByText("unknown").className).toContain("sr-only");
     expect(fillWidth(both.container)).toBe("0%");
     cleanup();
     const cur = render(<HpBar current={62} max={null} />);
@@ -47,7 +46,7 @@ describe("HpBar", () => {
     cleanup();
     render(<HpBar current={31} max={null} />);
     expect(screen.queryByRole("meter")).toBeNull();
-    expect(screen.getByLabelText("HP").hasAttribute("aria-valuenow")).toBe(false);
+    expect(screen.getByLabelText("HP: 31/?").hasAttribute("aria-valuenow")).toBe(false);
   });
   it("shows the block badge only when block > 0", () => {
     const withBlock = render(<HpBar current={31} max={62} block={7} />);
@@ -70,6 +69,50 @@ describe("HpBar label outline", () => {
     const blocked = render(<HpBar current={31} max={62} block={4} />);
     expect(blocked.container.querySelector('[data-blocked="true"]')).not.toBeNull();
     expect(stroke(blocked.container)).toBe("#0B2A4A");
+  });
+});
+
+describe("HpBar accessible name and meter values", () => {
+  const root = (c: HTMLElement) => c.querySelector('[data-slot="hp-bar"]') as HTMLElement;
+  const name = (el: HTMLElement) => el.getAttribute("aria-label");
+  it("carries the value in the name for partial and unknown states", () => {
+    expect(name(root(render(<HpBar current={62} max={null} />).container))).toBe("HP: 62/?");
+    cleanup();
+    expect(name(root(render(<HpBar current={null} max={80} />).container))).toBe("HP: ?/80");
+    cleanup();
+    expect(name(root(render(<HpBar current={null} max={null} />).container))).toBe("HP: unknown");
+    cleanup();
+    expect(name(root(render(<HpBar current={null} max={null} label="Ember HP" />).container))).toBe("Ember HP: unknown");
+    cleanup();
+    expect(root(render(<HpBar current={62} max={null} />).container).getAttribute("role")).toBe("img");
+  });
+  it("names a meter with the label", () => {
+    render(<HpBar current={31} max={62} label="Ember HP" />);
+    expect(screen.getByRole("meter", { name: "Ember HP" })).toBeTruthy();
+  });
+  it("keeps meter values valid: clamps, and explains overheal and negatives in valuetext", () => {
+    const over = root(render(<HpBar current={95} max={80} />).container);
+    expect(over.getAttribute("aria-valuenow")).toBe("80");
+    expect(over.getAttribute("aria-valuetext")).toBe("95/80");
+    expect(screen.getByText("95/80")).toBeTruthy();
+    cleanup();
+    const neg = root(render(<HpBar current={-5} max={80} />).container);
+    expect(neg.getAttribute("aria-valuenow")).toBe("0");
+    expect(neg.getAttribute("aria-valuetext")).toBe("-5/80");
+    cleanup();
+    expect(root(render(<HpBar current={31} max={62} />).container).hasAttribute("aria-valuetext")).toBe(false);
+  });
+  it("is not a meter when max is 0 or less", () => {
+    const zero = root(render(<HpBar current={5} max={0} />).container);
+    expect(zero.getAttribute("role")).toBe("img");
+    expect(name(zero)).toBe("HP: 5/0");
+    expect(zero.hasAttribute("aria-valuenow")).toBe(false);
+  });
+  it("marks danger on the track wrapper, not the root box", () => {
+    const { container } = render(<HpBar current={5} max={80} danger />);
+    expect(root(container).getAttribute("data-danger")).toBe("true");
+    expect(root(container).style.filter).toBe("");
+    expect(container.querySelector('[data-slot="hp-bar-track"]')!.parentElement!.style.filter).toContain("drop-shadow");
   });
 });
 
