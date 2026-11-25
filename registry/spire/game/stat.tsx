@@ -1,5 +1,6 @@
 import { SpireIcon } from "../ui/spire-icon";
 import { cn } from "../lib/cn";
+import { HpBar } from "./hp-bar";
 
 function Stat(props: { icon: string; label: string; text: string; known: boolean; tone: string; size?: number }) {
   return (
@@ -19,16 +20,20 @@ function Stat(props: { icon: string; label: string; text: string; known: boolean
 
 const show = (n: number | null) => (n === null ? "?" : String(n));
 
-/** Hit points as "current/max"; an unknown side renders "?". */
+/** Hit points as a game-style bar with "current/max" on it; an unknown side renders "?". */
 export function StatHP(props: { current: number | null; max: number | null }) {
+  const known = props.current !== null || props.max !== null;
   return (
-    <Stat
-      icon="STAT.HP"
-      label="HP"
-      text={`${show(props.current)}/${show(props.max)}`}
-      known={props.current !== null || props.max !== null}
-      tone="text-spire-hp"
-    />
+    <span
+      data-slot="stat"
+      role="img"
+      aria-label={`HP: ${known ? `${show(props.current)}/${show(props.max)}` : "unknown"}`}
+      className="inline-flex h-5 w-[88px] items-center"
+    >
+      <span aria-hidden className="flex w-full">
+        <HpBar current={props.current} max={props.max} size="sm" />
+      </span>
+    </span>
   );
 }
 

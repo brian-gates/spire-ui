@@ -281,6 +281,27 @@
       ]
     },
     {
+      "name": "spire-hp-bar",
+      "type": "registry:ui",
+      "title": "HpBar",
+      "description": "A game-style health bar: dark rounded track, red fill and the numbers centred on top, with an optional block badge.",
+      "dependencies": [
+        "react"
+      ],
+      "registryDependencies": [
+        "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-combat-tones.json"
+      ],
+      "files": [
+        {
+          "path": "registry/spire/game/hp-bar.tsx",
+          "type": "registry:ui",
+          "target": "~/lib/spire/game/hp-bar.tsx"
+        }
+      ]
+    },
+    {
       "name": "spire-stat",
       "type": "registry:ui",
       "title": "Stats",
@@ -291,7 +312,8 @@
       "registryDependencies": [
         "https://brian-gates.github.io/spire-ui/r/spire-icon.json",
         "https://brian-gates.github.io/spire-ui/r/spire-theme.json",
-        "https://brian-gates.github.io/spire-ui/r/spire-utils.json"
+        "https://brian-gates.github.io/spire-ui/r/spire-utils.json",
+        "https://brian-gates.github.io/spire-ui/r/spire-hp-bar.json"
       ],
       "files": [
         {
