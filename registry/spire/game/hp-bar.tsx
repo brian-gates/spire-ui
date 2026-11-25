@@ -3,12 +3,14 @@ import { cn } from "../lib/cn";
 import { useSpireAsset } from "../lib/assets-provider";
 import { clampFraction } from "../lib/combat-tones";
 
-// The game's health bar, redrawn in CSS: track and fill both end in a point (a stretched hexagon). Geometry per
-// size, in px: bar height, depth of each end's point, the track's edge, the fill's inset from the ends and from
-// the top and bottom, and the label's size and outline.
+// The game's health bar, redrawn in CSS: a slim track and fill that both end in a point, with the numbers drawn
+// ON the bar. The label is bigger than the bar: its baseline sits near the bar's middle, so most of it rises
+// above. The box is tall enough to hold the label with the bar at its bottom. Sizes in px: box height, track
+// height, point depth, track edge, fill inset from the ends and from top/bottom, fill point, label size and
+// outline, label offset from the bottom, and the block shield's height.
 const SIZE = {
-  md: { shield: 22, h: 16, point: 7, edge: 1.5, blockEdge: 2, insetX: 5, insetY: 3, fillPoint: 4, text: 14, stroke: 4, shadow: "1.5px 1px" },
-  sm: { shield: 18, h: 13, point: 5.5, edge: 1.25, blockEdge: 1.75, insetX: 4, insetY: 2.5, fillPoint: 3, text: 11, stroke: 3, shadow: "1px 1px" },
+  md: { box: 22, track: 8, point: 3, edge: 1, blockEdge: 1.25, insetX: 3, insetY: 1.75, fillPoint: 2, text: 17, stroke: 5, lift: 0.5, shadow: "1.5px 1px", shield: 22 },
+  sm: { box: 17, track: 6, point: 2.5, edge: 1, blockEdge: 1.25, insetX: 2.5, insetY: 1.5, fillPoint: 1.5, text: 12.5, stroke: 4, lift: 0, shadow: "1px 1px", shield: 17 },
 } as const;
 
 /** A shape with its left and right ends pointed `d` px deep, the point in the vertical middle. */
@@ -37,14 +39,14 @@ export function HpBar(props: { current: number | null; max: number | null; block
       {...(known
         ? { role: "meter", "aria-valuenow": current, "aria-valuemin": 0, "aria-valuemax": max, "aria-label": "HP" }
         : { role: "img", "aria-label": "HP" })}
-      className={cn("relative flex w-full items-center", className)}
-      style={{ height: s.h }}
+      className={cn("relative flex w-full items-end", className)}
+      style={{ height: s.box }}
     >
-      <span data-slot="hp-bar-track" aria-hidden className="absolute inset-0" style={{ opacity: hasBlock ? 1 : 0.75 }}>
+      <span data-slot="hp-bar-track" aria-hidden className="relative block w-full" style={{ height: s.track, opacity: hasBlock ? 1 : 0.75 }}>
         <span className="absolute inset-0" style={{ ...pointed(s.point), background: hasBlock ? "#B4E2FF" : "rgb(23,47,36)" }} />
         <span className="absolute" style={{ inset: edge, ...pointed(Math.max(s.point - edge, 0)), background: "rgb(10,19,16)" }} />
       </span>
-      <span aria-hidden className="absolute" style={{ inset: `${s.insetY}px ${s.insetX}px`, ...pointed(s.fillPoint) }}>
+      <span aria-hidden className="absolute" style={{ left: s.insetX, right: s.insetX, bottom: s.insetY, height: s.track - 2 * s.insetY, ...pointed(s.fillPoint) }}>
         <span
           data-slot="hp-bar-fill"
           className="block h-full"
@@ -55,7 +57,7 @@ export function HpBar(props: { current: number | null; max: number | null; block
         />
       </span>
       {hasBlock && shield.source === "extracted" ? (
-        <span data-slot="hp-bar-block" className="font-spire-display absolute z-10 inline-flex items-center justify-center" style={{ left: -s.shield * 0.3, top: (s.h - s.shield) / 2, height: s.shield, width: s.shield }}>
+        <span data-slot="hp-bar-block" className="font-spire-display absolute bottom-0 z-10 inline-flex items-center justify-center" style={{ left: -s.shield * 0.3, height: s.shield, width: s.shield }}>
           <img
             alt=""
             aria-hidden
@@ -66,7 +68,7 @@ export function HpBar(props: { current: number | null; max: number | null; block
           />
           <span
             className="relative leading-none font-bold text-[#FFF6E2] tabular-nums"
-            style={{ fontSize: s.text - 2, WebkitTextStroke: `${s.stroke}px #0b2a5c`, paintOrder: "stroke fill" }}
+            style={{ fontSize: s.text - 5, WebkitTextStroke: `${s.stroke - 1}px #0b2a5c`, paintOrder: "stroke fill" }}
           >
             {block}
           </span>
@@ -74,16 +76,17 @@ export function HpBar(props: { current: number | null; max: number | null; block
       ) : hasBlock ? (
         <span
           data-slot="hp-bar-block"
-          className="font-spire-display relative z-10 inline-flex shrink-0 items-center justify-center rounded-full font-bold text-[#0d2b44] tabular-nums"
-          style={{ height: s.h, minWidth: s.h, background: "#B4E2FF", fontSize: s.text - 3, paddingInline: 3 }}
+          className="font-spire-display absolute bottom-0 z-10 inline-flex items-center justify-center rounded-full font-bold text-[#0d2b44] tabular-nums"
+          style={{ left: -3, height: s.track + 4, minWidth: s.track + 4, background: "#B4E2FF", fontSize: s.text - 7, paddingInline: 2 }}
         >
           {block}
         </span>
       ) : null}
       <span
         data-slot="hp-bar-label"
-        className="font-spire-display relative z-10 min-w-0 flex-1 text-center leading-none font-bold whitespace-nowrap text-[#FFF6E2] tabular-nums"
+        className="font-spire-display absolute inset-x-0 z-10 text-center leading-none font-bold whitespace-nowrap text-[#FFF6E2] tabular-nums"
         style={{
+          bottom: s.lift,
           fontSize: s.text,
           WebkitTextStroke: `${s.stroke}px #900000`,
           paintOrder: "stroke fill",
