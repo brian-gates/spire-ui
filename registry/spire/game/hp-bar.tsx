@@ -1,4 +1,4 @@
-import { type CSSProperties, useLayoutEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { cn } from "../lib/cn";
 import { useSpireAsset } from "../lib/assets-provider";
 import { clampFraction } from "../lib/combat-tones";
@@ -8,14 +8,16 @@ import { clampFraction } from "../lib/combat-tones";
 // above. The box is tall enough to hold the label with the bar at its bottom. Sizes in px: box height, track
 // height, point depth, track edge, fill inset from the ends and from top/bottom, fill point, label size and
 // outline, label offset from the bottom, the block shield's height and number size, and the narrowest the bar
-// is drawn (so a 3-digit label never covers it). A label wider than its room is scaled down, to at least MIN_FIT.
+// is drawn (so a 3-digit label never covers it). A label wider than its room shrinks to at least MIN_FIT of its size.
 const SIZE = {
   md: { box: 22, track: 8, point: 3, edge: 1, blockEdge: 1.25, insetX: 3, insetY: 1.75, fillPoint: 2, text: 17, stroke: 5, lift: 0.5, shadow: "1.5px 1px", shield: 28, shieldText: 13, minWidth: 96 },
   sm: { box: 17, track: 6, point: 2.5, edge: 1, blockEdge: 1.25, insetX: 2.5, insetY: 1.5, fillPoint: 1.5, text: 12.5, stroke: 4, lift: 0, shadow: "1px 1px", shield: 22, shieldText: 11, minWidth: 76 },
 } as const;
 
-/** The smallest scale a label shrinks to; below it the label overflows rather than shrink further. */
+/** The smallest size a label shrinks to, as a share of normal; below it the label overflows rather than shrink further. */
 const MIN_FIT = 0.85;
+/** Average width of a label glyph (digits and the slash) in Kreon Bold, in em. */
+const GLYPH = 0.56;
 
 /** The fill's two tones with a thin lighter line between them: red, and steel blue while block is up. */
 const twoTone = (top: string, line: string, bottom: string) =>
@@ -46,34 +48,18 @@ export function HpBar(props: { current: number | null; max: number | null; block
   // box keeps its height whether or not block is shown.
   const below = (s.shield - s.track) / 2;
   const shift = hasBlock ? s.shield * 0.35 : 0;
-  const rootRef = useRef<HTMLSpanElement>(null);
-  const textRef = useRef<HTMLSpanElement>(null);
-  const [fit, setFit] = useState(1);
   const text = `${show(current)}/${show(max)}`;
-  useLayoutEffect(() => {
-    const root = rootRef.current;
-    const el = textRef.current;
-    if (!root || !el) return;
-    const measure = () => {
-      const natural = el.offsetWidth + s.stroke;
-      const room = root.clientWidth - shift - 2;
-      setFit(natural > 0 && room > 0 ? Math.min(1, Math.max(MIN_FIT, room / natural)) : 1);
-    };
-    measure();
-    if (typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(measure);
-    ro.observe(root);
-    return () => ro.disconnect();
-  }, [text, s.stroke, shift]);
+  // Label size: the normal size when it fits, else shrunk to fit the bar (a container query on the bar's own
+  // width, with an average glyph width of GLYPH em), but never below MIN_FIT of normal.
+  const fontSize = `clamp(${s.text * MIN_FIT}px, calc((100cqw - ${shift + 2 + s.stroke}px) / ${(text.length * GLYPH).toFixed(2)}), ${s.text}px)`;
   return (
     <span
-      ref={rootRef}
       data-slot="hp-bar"
       data-blocked={hasBlock ? "true" : undefined}
       {...(known
         ? { role: "meter", "aria-valuenow": current, "aria-valuemin": 0, "aria-valuemax": max, "aria-label": "HP" }
         : { role: "img", "aria-label": "HP" })}
-      className={cn("block w-full", className)}
+      className={cn("block w-full [container-type:inline-size]", className)}
       style={{ height: s.box + below, paddingBottom: below, minWidth: s.minWidth + (hasBlock ? s.shield * 0.7 : 0) }}
     >
       <span className="relative flex h-full w-full items-end">
@@ -123,15 +109,14 @@ export function HpBar(props: { current: number | null; max: number | null; block
         style={{
           bottom: s.lift,
           left: shift,
-          transform: fit < 1 ? `scale(${fit})` : undefined,
-          fontSize: s.text,
+          fontSize,
           "--hp-outline": hasBlock ? "#0B2A4A" : "#900000",
           WebkitTextStroke: `${s.stroke}px var(--hp-outline)`,
           paintOrder: "stroke fill",
           textShadow: `${s.shadow} 0 rgba(0,0,0,0.25)`,
         } as CSSProperties}
       >
-        <span ref={textRef} aria-hidden={known ? undefined : true}>{text}</span>
+        <span aria-hidden={known ? undefined : true}>{text}</span>
         {!known && <span className="sr-only">unknown</span>}
       </span>
       </span>
