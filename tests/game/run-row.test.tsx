@@ -174,7 +174,7 @@ describe("RunRow deck column", () => {
     const { container } = render(<RunRow run={{ ...run, players: [{ ...you, deckSize: 20 }, friend] }} />);
     const rows = Array.from(container.querySelectorAll("[data-slot=player-row]"));
     expect(rows.length).toBe(2);
-    for (const r of rows) expect(r.className).toContain("@3xl:grid-cols-[2rem_minmax(7.5rem,11rem)_6.5rem_4.75rem_3.75rem");
+    for (const r of rows) expect(r.className).toContain("@3xl:grid-cols-[2rem_minmax(7.5rem,11rem)_7.5rem_4.75rem_3.75rem");
     expect(screen.getByRole("img", { name: "Deck: 20" })).toBeTruthy();
     expect(screen.getByRole("img", { name: "Deck: unknown" })).toBeTruthy();
   });

@@ -37,8 +37,8 @@ export function PlayerRow(props: { player: RunPlayerView; showDeck?: boolean }) 
         "grid min-h-11 items-center gap-x-3 gap-y-1",
         "grid-cols-[2rem_minmax(0,1fr)_auto_auto]",
         hasDeck
-          ? "@3xl:grid-cols-[2rem_minmax(7.5rem,11rem)_6.5rem_4.75rem_3.75rem_minmax(0,1fr)_auto]"
-          : "@3xl:grid-cols-[2rem_minmax(7.5rem,11rem)_6.5rem_4.75rem_minmax(0,1fr)_auto]",
+          ? "@3xl:grid-cols-[2rem_minmax(7.5rem,11rem)_7.5rem_4.75rem_3.75rem_minmax(0,1fr)_auto]"
+          : "@3xl:grid-cols-[2rem_minmax(7.5rem,11rem)_7.5rem_4.75rem_minmax(0,1fr)_auto]",
       )}
     >
       <ClassBadge character={p.character} size={32} withName={false} />

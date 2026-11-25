@@ -122,6 +122,7 @@ const bannerMat = (r: string) => `materials/cards/banners/card_banner_${r}_mat.t
  *  - UI.CARD_PLAQUE.<RARITY>: the type plaque (a nine-patch, left 26 / right 24 px at this 2x
  *    size), tinted like the portrait border it sits on.
  *  - UI.CARD_ORB.<CHARACTER>: the energy cost orb; UI.CARD_STAR: the Regent's star cost.
+ *  - UI.BLOCK: the block shield the health bar draws at its left end.
  */
 export const CARD_PIECES: readonly CardPiece[] = [
   ...SHAPES.flatMap((t) => FRAME_COLOURS.map((c) => piece(`UI.CARD_FRAME.${t.toUpperCase()}.${c.toUpperCase()}`, { sprite: `${CARD_SPRITES}/card_frame_${t}_s.tres` }, frameMat(c)))),
@@ -133,6 +134,7 @@ export const CARD_PIECES: readonly CardPiece[] = [
   ...BANNER_RARITIES.map((r) => piece(`UI.CARD_PLAQUE.${r.toUpperCase()}`, { sprite: `${CARD_SPRITES}/card_portrait_border_plaque_s.tres` }, bannerMat(r))),
   ...ORBS.map((c) => piece(`UI.CARD_ORB.${c.toUpperCase()}`, { sprite: `${CARD_SPRITES}/energy_${c}.tres` })),
   piece("UI.CARD_STAR", { image: "images/ui/combat/energy_star.png" }),
+  piece("UI.BLOCK", { image: "images/ui/combat/block.png" }),
 ];
 
 /**

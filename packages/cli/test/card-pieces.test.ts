@@ -156,6 +156,7 @@ describe("extracting card pieces", () => {
     expect(ids).toContain("UI.CARD_PLAQUE.COMMON");
     expect(ids).toContain("UI.CARD_ORB.SILENT");
     expect(ids).toContain("UI.CARD_STAR");
+    expect(ids).toContain("UI.BLOCK");
     for (const p of CARD_PIECES) expect(p.slug).toMatch(/^[a-z0-9_-]+$/);
     expect(CARD_PIECES.find((p) => p.id === "UI.CARD_FRAME.SKILL.GREEN")!.slug).toBe("card_frame-skill-green");
     expect(pieceBoxes(598, 844)).toEqual([211, 422, 844]);
