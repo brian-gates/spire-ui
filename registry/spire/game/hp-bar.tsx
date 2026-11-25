@@ -1,13 +1,14 @@
 import type { CSSProperties } from "react";
 import { cn } from "../lib/cn";
+import { useSpireAsset } from "../lib/assets-provider";
 import { clampFraction } from "../lib/combat-tones";
 
 // The game's health bar, redrawn in CSS: track and fill both end in a point (a stretched hexagon). Geometry per
 // size, in px: bar height, depth of each end's point, the track's edge, the fill's inset from the ends and from
 // the top and bottom, and the label's size and outline.
 const SIZE = {
-  md: { h: 16, point: 7, edge: 1.5, blockEdge: 2, insetX: 5, insetY: 3, fillPoint: 4, text: 14, stroke: 4, shadow: "1.5px 1px" },
-  sm: { h: 13, point: 5.5, edge: 1.25, blockEdge: 1.75, insetX: 4, insetY: 2.5, fillPoint: 3, text: 11, stroke: 3, shadow: "1px 1px" },
+  md: { shield: 22, h: 16, point: 7, edge: 1.5, blockEdge: 2, insetX: 5, insetY: 3, fillPoint: 4, text: 14, stroke: 4, shadow: "1.5px 1px" },
+  sm: { shield: 18, h: 13, point: 5.5, edge: 1.25, blockEdge: 1.75, insetX: 4, insetY: 2.5, fillPoint: 3, text: 11, stroke: 3, shadow: "1px 1px" },
 } as const;
 
 /** A shape with its left and right ends pointed `d` px deep, the point in the vertical middle. */
@@ -28,6 +29,7 @@ export function HpBar(props: { current: number | null; max: number | null; block
   const pct = known && max > 0 ? clampFraction(current / max) * 100 : 0;
   const hasBlock = typeof block === "number" && block > 0;
   const s = SIZE[size];
+  const shield = useSpireAsset("UI.BLOCK");
   const edge = hasBlock ? s.blockEdge : s.edge;
   return (
     <span
@@ -52,7 +54,24 @@ export function HpBar(props: { current: number | null; max: number | null; block
           }}
         />
       </span>
-      {hasBlock && (
+      {hasBlock && shield.source === "extracted" ? (
+        <span data-slot="hp-bar-block" className="font-spire-display absolute z-10 inline-flex items-center justify-center" style={{ left: -s.shield * 0.3, top: (s.h - s.shield) / 2, height: s.shield, width: s.shield }}>
+          <img
+            alt=""
+            aria-hidden
+            height={s.shield}
+            {...(shield.srcSet ? { srcSet: shield.srcSet, sizes: `${s.shield}px` } : {})}
+            src={shield.src}
+            className="absolute inset-0 h-full w-full object-contain"
+          />
+          <span
+            className="relative leading-none font-bold text-[#FFF6E2] tabular-nums"
+            style={{ fontSize: s.text - 2, WebkitTextStroke: `${s.stroke}px #0b2a5c`, paintOrder: "stroke fill" }}
+          >
+            {block}
+          </span>
+        </span>
+      ) : hasBlock ? (
         <span
           data-slot="hp-bar-block"
           className="font-spire-display relative z-10 inline-flex shrink-0 items-center justify-center rounded-full font-bold text-[#0d2b44] tabular-nums"
@@ -60,7 +79,7 @@ export function HpBar(props: { current: number | null; max: number | null; block
         >
           {block}
         </span>
-      )}
+      ) : null}
       <span
         data-slot="hp-bar-label"
         className="font-spire-display relative z-10 min-w-0 flex-1 text-center leading-none font-bold whitespace-nowrap text-[#FFF6E2] tabular-nums"

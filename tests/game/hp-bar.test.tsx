@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { SpireAssets } from "../../registry/spire/lib/assets-provider";
 import { HpBar } from "../../registry/spire/game/hp-bar";
 import { StatHP } from "../../registry/spire/game/stat";
 
@@ -56,6 +57,20 @@ describe("HpBar", () => {
       const r = render(<HpBar current={31} max={62} block={block} />);
       expect(r.container.querySelector('[data-slot="hp-bar-block"]')).toBeNull();
     }
+  });
+});
+
+describe("HpBar block shield", () => {
+  it("draws the extracted shield with the number when the manifest has UI.BLOCK, else the badge", () => {
+    const manifest = { schemaVersion: 1 as const, gameVersion: "t", generatedAt: "2026-01-01T00:00:00.000Z", items: { "UI.BLOCK": { kind: "ui" as const, file: "ui/block@64.webp", w: 64, h: 64 } } };
+    const { container } = render(
+      <SpireAssets base="/art" manifest={manifest as never}>
+        <HpBar current={31} max={62} block={9} />
+      </SpireAssets>,
+    );
+    const block = container.querySelector('[data-slot="hp-bar-block"]')!;
+    expect(block.querySelector("img")?.getAttribute("src")).toBe("/art/ui/block@64.webp");
+    expect(block.textContent).toBe("9");
   });
 });
 
