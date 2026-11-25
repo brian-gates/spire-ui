@@ -60,6 +60,19 @@ describe("HpBar", () => {
   });
 });
 
+describe("HpBar label outline", () => {
+  const stroke = (c: HTMLElement) => (c.querySelector('[data-slot="hp-bar-label"]') as HTMLElement).style.getPropertyValue("--hp-outline");
+  it("is dark red normally and dark blue with block", () => {
+    const plain = render(<HpBar current={31} max={62} />);
+    expect(plain.container.querySelector('[data-blocked]')).toBeNull();
+    expect(stroke(plain.container)).toBe("#900000");
+    cleanup();
+    const blocked = render(<HpBar current={31} max={62} block={4} />);
+    expect(blocked.container.querySelector('[data-blocked="true"]')).not.toBeNull();
+    expect(stroke(blocked.container)).toBe("#0B3A6E");
+  });
+});
+
 describe("HpBar block shield", () => {
   it("draws the extracted shield with the number when the manifest has UI.BLOCK, else the badge", () => {
     const manifest = { schemaVersion: 1 as const, gameVersion: "t", generatedAt: "2026-01-01T00:00:00.000Z", items: { "UI.BLOCK": { kind: "ui" as const, file: "ui/block@64.webp", w: 64, h: 64 } } };
