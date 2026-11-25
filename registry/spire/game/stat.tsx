@@ -28,7 +28,7 @@ export function StatHP(props: { current: number | null; max: number | null }) {
       data-slot="stat"
       role="img"
       aria-label={`HP: ${known ? `${show(props.current)}/${show(props.max)}` : "unknown"}`}
-      className="inline-flex h-[22px] w-[112px] items-end"
+      className="inline-flex h-8 w-[112px] items-end"
     >
       <span aria-hidden className="flex w-full">
         <HpBar current={props.current} max={props.max} size="md" />

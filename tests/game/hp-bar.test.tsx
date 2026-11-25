@@ -73,6 +73,28 @@ describe("HpBar label outline", () => {
   });
 });
 
+describe("HpBar box", () => {
+  const root = (c: HTMLElement) => c.querySelector('[data-slot="hp-bar"]') as HTMLElement;
+  it("keeps its height with or without block, per size", () => {
+    for (const size of ["md", "sm"] as const) {
+      const a = render(<HpBar current={31} max={62} size={size} />);
+      const h = root(a.container).style.height;
+      cleanup();
+      const b = render(<HpBar current={31} max={62} size={size} block={5} />);
+      expect(root(b.container).style.height).toBe(h);
+      cleanup();
+    }
+  });
+  it("sets a minimum width, wider when the shield shows", () => {
+    const plain = render(<HpBar current={100} max={100} />);
+    expect(root(plain.container).style.minWidth).toBe("96px");
+    cleanup();
+    expect(Number.parseFloat(root(render(<HpBar current={100} max={100} block={3} />).container).style.minWidth)).toBeGreaterThan(96);
+    cleanup();
+    expect(root(render(<HpBar current={100} max={100} size="sm" />).container).style.minWidth).toBe("76px");
+  });
+});
+
 describe("HpBar fill colour", () => {
   const bg = (c: HTMLElement) => (c.querySelector('[data-slot="hp-bar-fill"]') as HTMLElement).style.background;
   it("is red normally and steel blue with block", () => {
