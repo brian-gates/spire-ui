@@ -69,7 +69,19 @@ describe("HpBar label outline", () => {
     cleanup();
     const blocked = render(<HpBar current={31} max={62} block={4} />);
     expect(blocked.container.querySelector('[data-blocked="true"]')).not.toBeNull();
-    expect(stroke(blocked.container)).toBe("#0B3A6E");
+    expect(stroke(blocked.container)).toBe("#0B2A4A");
+  });
+});
+
+describe("HpBar fill colour", () => {
+  const bg = (c: HTMLElement) => (c.querySelector('[data-slot="hp-bar-fill"]') as HTMLElement).style.background;
+  it("is red normally and steel blue with block", () => {
+    const plain = render(<HpBar current={31} max={62} />);
+    expect(bg(plain.container)).toContain("#EE343F");
+    cleanup();
+    const blocked = render(<HpBar current={31} max={62} block={4} />);
+    expect(bg(blocked.container)).toContain("#3B6DA0");
+    expect(bg(blocked.container)).not.toContain("#EE343F");
   });
 });
 

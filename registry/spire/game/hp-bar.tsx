@@ -13,6 +13,11 @@ const SIZE = {
   sm: { box: 17, track: 6, point: 2.5, edge: 1, blockEdge: 1.25, insetX: 2.5, insetY: 1.5, fillPoint: 1.5, text: 12.5, stroke: 4, lift: 0, shadow: "1px 1px", shield: 22, shieldText: 11 },
 } as const;
 
+/** The fill's two tones with a thin lighter line between them: red, and steel blue while block is up. */
+const twoTone = (top: string, line: string, bottom: string) =>
+  `linear-gradient(to bottom, ${top} 0 calc(50% - 0.5px), ${line} calc(50% - 0.5px) calc(50% + 0.5px), ${bottom} calc(50% + 0.5px) 100%)`;
+const FILL = { red: twoTone("#EE343F", "#F4676B", "#CA3136"), blue: twoTone("#3B6DA0", "#6E9CCB", "#274F73") };
+
 /** A shape with its left and right ends pointed `d` px deep, the point in the vertical middle. */
 const pointed = (d: number): CSSProperties => ({
   clipPath: `polygon(0 50%, ${d}px 0, calc(100% - ${d}px) 0, 100% 50%, calc(100% - ${d}px) 100%, ${d}px 100%)`,
@@ -56,7 +61,7 @@ export function HpBar(props: { current: number | null; max: number | null; block
           className="block h-full"
           style={{
             width: `${pct}%`,
-            background: "linear-gradient(to bottom, #CC0C0C 0 calc(50% - 0.5px), #E04A3A calc(50% - 0.5px) calc(50% + 0.5px), #8C0808 calc(50% + 0.5px) 100%)",
+            background: hasBlock ? FILL.blue : FILL.red,
           }}
         />
       </span>
@@ -72,7 +77,7 @@ export function HpBar(props: { current: number | null; max: number | null; block
           />
           <span
             className="relative leading-none font-bold text-[#FFF6E2] tabular-nums"
-            style={{ fontSize: s.shieldText, WebkitTextStroke: `${s.stroke - 1}px #0B3A6E`, paintOrder: "stroke fill" }}
+            style={{ fontSize: s.shieldText, WebkitTextStroke: `${s.stroke - 1}px #0B2A4A`, paintOrder: "stroke fill" }}
           >
             {block}
           </span>
@@ -93,7 +98,7 @@ export function HpBar(props: { current: number | null; max: number | null; block
           bottom: s.lift,
           left: hasBlock ? s.shield * 0.35 : 0,
           fontSize: s.text,
-          "--hp-outline": hasBlock ? "#0B3A6E" : "#900000",
+          "--hp-outline": hasBlock ? "#0B2A4A" : "#900000",
           WebkitTextStroke: `${s.stroke}px var(--hp-outline)`,
           paintOrder: "stroke fill",
           textShadow: `${s.shadow} 0 rgba(0,0,0,0.25)`,
