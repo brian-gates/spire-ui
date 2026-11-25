@@ -73,7 +73,7 @@ With the `ui` kind the run also writes the pieces the game draws a card from, as
 - `UI.CARD_BANNER.<RARITY>`, `UI.CARD_PORTRAIT_BORDER.<SHAPE>.<RARITY>` and `UI.CARD_PLAQUE.<RARITY>`
   (rarities `COMMON UNCOMMON RARE CURSE EVENT QUEST STATUS ANCIENT`; the plaque is a nine-patch,
   26px left and 24px right at full size).
-- `UI.CARD_ORB.<IRONCLAD|SILENT|DEFECT|REGENT|NECROBINDER|COLORLESS|QUEST>` and `UI.CARD_STAR`.
+- `UI.CARD_ORB.<IRONCLAD|SILENT|DEFECT|REGENT|NECROBINDER|COLORLESS|QUEST>` `UI.CARD_STAR` and `UI.BLOCK` (the block shield).
 
 The game paints these in one base colour and recolours them with its `hsv` shader (a hue turn,
 chroma scale and value scale in YIQ space), using a material per frame colour or per rarity. The
