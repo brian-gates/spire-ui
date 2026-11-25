@@ -27,9 +27,14 @@ export function StatHP(props: { current: number | null; max: number | null }) {
       data-slot="stat"
       role="img"
       aria-label={`HP: ${known ? `${show(props.current)}/${show(props.max)}` : "unknown"}`}
-      className="inline-flex h-8 w-[96px] items-end @3xl:w-[112px]"
+      className="inline-flex h-8 w-[80px] items-end @3xl:w-[112px]"
     >
-      <span aria-hidden className="flex w-full">
+      {/* Compact bar until the row has room (on a phone the player's name needs it), full size from @3xl.
+          Only one is ever visible; both are hidden from assistive tech, which reads this element's label. */}
+      <span aria-hidden className="flex w-full @3xl:hidden">
+        <HpBar current={props.current} max={props.max} size="sm" />
+      </span>
+      <span aria-hidden className="hidden w-full @3xl:flex">
         <HpBar current={props.current} max={props.max} size="md" />
       </span>
     </span>
