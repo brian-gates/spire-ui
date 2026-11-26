@@ -10,6 +10,9 @@ export interface RunHeaderView {
   ended?: boolean;
   savedAt?: Date;
   savedBy?: string;
+  killedBy?: string;
+  duration?: string;
+  gameMode?: string;
 }
 
 const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
@@ -62,6 +65,14 @@ export function RunHeader(props: { run: RunHeaderView; actions?: ReactNode }) {
       </span>
       {run.mode === "modded" && <Badge tone="event">Modded</Badge>}
       {run.ended && <Badge tone="boss">Ended</Badge>}
+      {run.killedBy && <span className="min-w-0 break-words text-sm text-spire-muted">Killed by {run.killedBy}</span>}
+      {run.duration && (
+        <span className="text-sm tabular-nums text-spire-muted" title="Run time">
+          <span className="sr-only">Run time </span>
+          {run.duration}
+        </span>
+      )}
+      {run.gameMode && <span className="rounded border border-spire-panel-edge px-1.5 text-xs text-spire-muted">{run.gameMode}</span>}
       {run.savedAt && (
         <span className="text-sm text-spire-muted @2xl:ml-auto" title={run.savedAt.toLocaleString()}>
           Saved {relativeTime(run.savedAt)}

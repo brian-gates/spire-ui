@@ -16,6 +16,12 @@ export interface RunView {
   ended?: boolean;
   savedAt?: Date;
   savedBy?: string;
+  /** Display name of what killed the run; only for a death. */
+  killedBy?: string;
+  /** Run time, preformatted (e.g. "24:07"). */
+  duration?: string;
+  /** Game mode label, only for a non-standard mode. */
+  gameMode?: string;
   players: RunPlayerView[];
 }
 

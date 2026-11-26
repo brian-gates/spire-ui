@@ -48,6 +48,9 @@ export const UnknownRunPosition: Story = {
   },
 };
 export const Ended: Story = { args: { run: { ...base, ended: true, savedAt: ago(70) } } };
+export const Outcome: Story = {
+  args: { run: { ...base, killedBy: "Slime Boss", duration: "24:07", gameMode: "Daily" } },
+};
 export const FortyRelics: Story = {
   args: { run: { ...base, players: [{ ...ironclad, relics: relics(40) }] } },
 };
@@ -58,3 +61,7 @@ export const LongName: Story = {
 const narrow = [(Story: () => React.JSX.Element) => <div className="w-[360px]"><Story /></div>];
 export const FortyRelicsNarrow: Story = { ...FortyRelics, decorators: narrow };
 export const LongNameNarrow: Story = { ...LongName, decorators: narrow };
+export const OutcomeNarrow: Story = {
+  args: { run: { ...base, killedBy: "Wolfeschlegelsteinhausen-Bergerd the Unrelenting", duration: "24:07", gameMode: "Daily" } },
+  decorators: narrow,
+};
