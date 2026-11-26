@@ -52,6 +52,10 @@ const bo: RunPlayerView = {
 };
 const run: RunView = { id: "r", act: 2, floor: 21, ascension: 2, mode: "regular", savedAt: ago(3), savedBy: "Bo", players: [ayla, bo] };
 const fortyRelics: RunView = { ...run, id: "40", players: [{ ...ayla, name: "Wolfeschlegelsteinhausen-Bergerd", relics: relics(40) }] };
+const outcome: RunView = {
+  ...run, id: "outcome", killedBy: "Wolfeschlegelsteinhausen-Bergerd the Unrelenting", duration: "24:07", gameMode: "Daily",
+  players: [{ ...ayla, relics: relics(3) }],
+};
 
 // One single-player fight in the game's short line forms, for the combat stats demos.
 const heal = <span className="font-spire-display text-lg font-bold text-spire-healed">+</span>;
@@ -236,8 +240,8 @@ export const COMPONENTS: ComponentDoc[] = [
   },
   {
     slug: "run-row", name: "RunRow", summary: "A whole run as a row. It adapts to its own width and stays inside a 360px screen even with 40 relics.",
-    usage: `<RunRow run={run} actions={<Button size="sm">Open</Button>} />`,
-    Demo: () => (<div className="grid gap-4"><RunRow run={fortyRelics} /><RunRow run={run} /></div>),
+    usage: `<RunRow run={run} actions={<Button size="sm">Open</Button>} />\n// Optional outcome fields on the run: killedBy, duration (preformatted), gameMode.`,
+    Demo: () => (<div className="grid gap-4"><RunRow run={fortyRelics} /><RunRow run={run} /><RunRow run={outcome} /></div>),
   },
   {
     slug: "card-frame", name: "CardFrame", summary: "An original card frame for names, costs, types and rarities. It contains no card art or text.",

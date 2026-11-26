@@ -21,3 +21,19 @@ test("RunRow with 40 relics stays inside 360px and keeps name and HP on one line
   expect(name!.width).toBeGreaterThan(40);
   expect(loot!.y).toBeGreaterThan(hp!.y + hp!.height - 1);
 });
+
+test("RunRow with killer, duration, mode and a long killer name has no horizontal overflow at 360px", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto("/spire-ui/components/run-row");
+  const row = page.locator("[data-slot=run-row]").filter({ hasText: "Killed by" }).first();
+  await expect(row).toBeVisible();
+  await expect(row.getByText("24:07")).toBeVisible();
+  await expect(row.getByText("Daily", { exact: true })).toBeVisible();
+
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
+  const box = await row.boundingBox();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(360);
+  const header = row.locator("[data-slot=run-header]");
+  expect(await header.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+});

@@ -79,6 +79,24 @@ describe("RunHeader", () => {
   });
 });
 
+describe("RunHeader outcome fields", () => {
+  it("renders killer, duration and mode when given", () => {
+    render(<RunRow run={{ ...run, killedBy: "Slime Boss", duration: "24:07", gameMode: "Daily" }} />);
+    expect(screen.getByText("Killed by Slime Boss")).toBeTruthy();
+    const time = screen.getByText("24:07");
+    expect(time.getAttribute("title")).toBe("Run time");
+    expect(time.textContent).toBe("Run time 24:07");
+    expect(screen.getByText("Run time", { selector: ".sr-only" })).toBeTruthy();
+    expect(screen.getByText("Daily")).toBeTruthy();
+  });
+  it("renders none of them when absent", () => {
+    render(<RunRow run={run} />);
+    expect(screen.queryByText(/Killed by/)).toBeNull();
+    expect(screen.queryByText("Run time")).toBeNull();
+    expect(screen.queryByTitle("Run time")).toBeNull();
+  });
+});
+
 describe("PlayerRow", () => {
   it("truncates a 32 character name visually but keeps it whole in title", () => {
     const name = "A".repeat(32);
